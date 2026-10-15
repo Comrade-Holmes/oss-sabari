@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Dishes & Menus — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Dishes & Menus</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Dishes & Culinary Offerings</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Browse multi-restaurant dishes, examine ingredient breakdowns, and detect allergen linkages</p>
+    </div>
+    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+        <a href="/dishes/new" class="btn btn-primary">
+            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
+            <span>Add Dish</span>
+        </a>
+    {% endif %}
+</div>
+
+<!-- Search & Filters Bar -->
+<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+    <form action="/dishes" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Search dish name, description..." value="{{ search or '' }}">
+        </div>
+
+        <div style="flex: 1; min-width: 160px;">
+            <label class="form-label">Restaurant</label>
+            <select name="restaurant" class="form-control">
+                <option value="">All Restaurants</option>
+                {% for r in restaurants %}
+                    <option value="{{ r.id }}" {% if selected_restaurant == r.id %}selected{% endif %}>{{ r.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 140px;">
+            <label class="form-label">Contains Allergen</label>
+            <select name="allergen" class="form-control">
+                <option value="">Any Allergen</option>
+                {% for a in allergens %}
+                    <option value="{{ a.id }}" {% if selected_allergen == a.id %}selected{% endif %}>{{ a.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-secondary">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                <span>Filter</span>
+            </button>
+            <a href="/dishes" class="btn btn-secondary" title="Reset Filters"><i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Dishes Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Dish Name</th>
+                    <th>Offered At</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Recorded Allergens</th>
+                    <th>Precautionary</th>
+                    <th>Data Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if dishes %}
+                    {% for d in dishes %}
+                        <tr>
+                            <td>
+                                <a href="/dishes/{{ d.id }}" style="font-weight: 600; font-size: 0.95rem; color: var(--color-deep);">
+                                    {{ d.name }}
+                                </a>
+                                <div style="display: flex; gap: 0.35rem; margin-top: 0.2rem;">
+                                    {% if d.vegan %}<span class="badge badge-green" style="font-size: 0.65rem;">Vegan</span>{% elif d.vegetarian %}<span class="badge badge-green" style="font-size: 0.65rem;">Vegetarian</span>{% endif %}
+                                    <span style="font-size: 0.75rem; color: var(--color-text-muted);">{{ d.ingredient_count }} ingredients</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% for r in d.restaurants %}
+                                    <div><a href="/restaurants/{{ r.id }}" style="font-size: 0.85rem;">{{ r.name }}</a></div>
+                                {% else %}
+                                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">Unlinked</span>
+                                {% endfor %}
+                            </td>
+                            <td><span class="badge badge-gray">{{ d.category }}</span></td>
+                            <td style="font-weight: 600;">${{ "%.2f"|format(d.price) }}</td>
+                            <td>
+                                {% if d.allergens %}
+                                    <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; max-width: 180px;">
+                                        {% for a in d.allergens %}
+                                            <span class="badge badge-red" style="font-size: 0.7rem;">{{ a.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">None recorded</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if d.may_contain_allergens %}
+                                    <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; max-width: 160px;">
+                                        {% for ma in d.may_contain_allergens %}
+                                            <span class="badge badge-amber" style="font-size: 0.7rem;">May: {{ ma.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">None</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if d.ingredient_data_status == 'COMPLETE' and d.ingredient_count > 0 %}
+                                    <span class="badge badge-green">Complete</span>
+                                {% elif d.ingredient_data_status == 'PARTIAL' %}
+                                    <span class="badge badge-amber">Partial</span>
+                                {% else %}
+                                    <span class="badge badge-red">Incomplete</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.4rem;">
+                                    <a href="/dishes/{{ d.id }}" class="btn btn-secondary btn-sm" title="Inspect Dish">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                    </a>
+                                    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                                        <a href="/dishes/{{ d.id }}/edit" class="btn btn-secondary btn-sm" title="Edit Dish">
+                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if current_user.role == 'ADMIN' %}
+                                        <form action="/dishes/{{ d.id }}/delete" method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger);" data-confirm="Delete dish '{{ d.name }}'? This safely removes menu and ingredient connections." title="Delete Dish">
+                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--color-text-muted); padding: 3rem;">
+                            <i data-lucide="utensils" style="width: 36px; height: 36px; margin-bottom: 0.75rem; opacity: 0.4;"></i>
+                            <div>No dishes match your filter criteria.</div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total dishes)
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&search={{ search or '' }}&restaurant={{ selected_restaurant or '' }}&category={{ selected_category or '' }}&allergen={{ selected_allergen or '' }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&search={{ search or '' }}&restaurant={{ selected_restaurant or '' }}&category={{ selected_category or '' }}&allergen={{ selected_allergen or '' }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

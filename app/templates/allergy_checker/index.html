@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Allergy Checker — Graph-Powered Food Safety Screening{% endblock %}
+{% block breadcrumb %}<span class="current">Allergy Checker</span>{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 1.85rem;">Graph-Powered Dietary Screening Engine</h1>
+    <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+        Multi-hop graph traversal across Restaurant &rarr; Dish &rarr; Ingredient &rarr; Allergen with precautionary cross-contact analysis
+    </p>
+</div>
+
+<!-- Prominent Food Safety Disclaimer -->
+<div class="disclaimer-banner">
+    <i data-lucide="shield-alert" class="disclaimer-banner-icon"></i>
+    <div>
+        <strong>AllerGraph Food Safety Disclaimer:</strong> AllerGraph is an informational screening tool. It cannot guarantee that a dish is free from allergens or cross-contact. Confirm ingredients and preparation practices directly with the restaurant, especially when managing a serious food allergy.
+    </div>
+</div>
+
+<!-- Screening Query Builder Card -->
+<div class="card" style="margin-bottom: 2.5rem; box-shadow: var(--shadow-md);">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i data-lucide="sliders-horizontal" style="width: 18px; height: 18px;"></i>
+            <span>Screening Parameters</span>
+        </h3>
+    </div>
+    <div class="card-body" style="padding: 2rem;">
+        <form action="/allergy-checker" method="GET">
+            <!-- 1. Allergen Multi-Select -->
+            <div style="margin-bottom: 1.5rem;">
+                <label class="form-label" style="font-size: 0.95rem; margin-bottom: 0.75rem;">
+                    1. Select Allergens to Screen Against *
+                </label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem;">
+                    {% for a in allergens %}
+                        <label class="form-check" style="background: var(--color-cream); padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid var(--color-border); transition: all 0.15s ease;">
+                            <input type="checkbox" name="allergens" value="{{ a.id }}" {% if a.id in selected_allergen_ids %}checked{% endif %}>
+                            <span style="font-size: 0.875rem; font-weight: 500;">{{ a.name }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 2. Matching Mode (ANY vs ALL) -->
+            <div style="margin-bottom: 1.75rem; background: var(--color-sage-light); padding: 1rem 1.25rem; border-radius: 8px; border: 1px solid var(--color-border);">
+                <label class="form-label" style="margin-bottom: 0.5rem;">2. Match Mode Logic</label>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <label class="form-check">
+                        <input type="radio" name="match_mode" value="ANY" {% if match_mode == 'ANY' %}checked{% endif %}>
+                        <div>
+                            <strong>ANY Selected Allergen (Strict Alert)</strong>
+                            <div style="font-size: 0.8rem; color: var(--color-text-muted);">Flags any dish containing at least ONE of your selected allergens.</div>
+                        </div>
+                    </label>
+
+                    <label class="form-check">
+                        <input type="radio" name="match_mode" value="ALL" {% if match_mode == 'ALL' %}checked{% endif %}>
+                        <div>
+                            <strong>ALL Selected Allergens</strong>
+                            <div style="font-size: 0.8rem; color: var(--color-text-muted);">Flags dishes that have recorded evidence for EVERY selected allergen.</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 3. Optional Filters -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Restaurant Filter</label>
+                    <select name="restaurant" class="form-control">
+                        <option value="">All Partner Restaurants</option>
+                        {% for r in restaurants %}
+                            <option value="{{ r.id }}" {% if selected_restaurant == r.id %}selected{% endif %}>{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">City Filter</label>
+                    <select name="city" class="form-control">
+                        <option value="">All Cities</option>
+                        {% for c in cities %}
+                            <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Dish Category</label>
+                    <select name="category" class="form-control">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <a href="/allergy-checker" class="btn btn-secondary">Reset Query</a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                    <span>Execute Graph Screening</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Screening Results Section -->
+{% if has_searched %}
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h2 style="font-size: 1.4rem;">Screening Results ({{ results | length }} Matches Detected)</h2>
+            <p style="color: var(--color-text-muted); font-size: 0.85rem;">
+                Showing dishes with recorded allergen links under <strong>{{ match_mode }}</strong> matching logic
+            </p>
+        </div>
+
+        {% if results %}
+            <a href="/graph" class="btn btn-outline-forest btn-sm">
+                <i data-lucide="network" style="width: 14px; height: 14px;"></i>
+                <span>Explore Full Traversal in Graph</span>
+            </a>
+        {% endif %}
+    </div>
+
+    {% if results %}
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            {% for item in results %}
+                <div class="card" style="border-left: 5px solid {% if item.matched_ingredients %}var(--color-danger){% else %}var(--color-warning){% endif %};">
+                    <div class="card-body" style="padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <a href="/dishes/{{ item.dish_id }}" style="font-size: 1.2rem; font-weight: 700; color: var(--color-deep);">
+                                        {{ item.dish_name }}
+                                    </a>
+                                    <span class="badge badge-gray">{{ item.dish_category }}</span>
+                                    {% if item.vegan %}<span class="badge badge-green">Vegan</span>{% elif item.vegetarian %}<span class="badge badge-green">Vegetarian</span>{% endif %}
+                                </div>
+                                <div style="font-size: 0.875rem; color: var(--color-text-muted); margin-top: 0.2rem;">
+                                    Offered by <a href="/restaurants/{{ item.restaurant_id }}" style="font-weight: 600; color: var(--color-forest);">{{ item.restaurant_name }}</a> ({{ item.restaurant_city }}) &bull; ${{ "%.2f"|format(item.dish_price) }}
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 0.5rem;">
+                                <a href="/dishes/{{ item.dish_id }}" class="btn btn-secondary btn-sm">Dish Details</a>
+                                <a href="/graph?search={{ item.dish_name }}" class="btn btn-outline-forest btn-sm" title="Trace Graph">
+                                    <i data-lucide="network" style="width: 14px; height: 14px;"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Match Summary Banner -->
+                        <div style="background-color: {% if item.matched_ingredients %}var(--color-danger-light){% else %}var(--color-warning-light){% endif %}; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; font-weight: 600; color: {% if item.matched_ingredients %}var(--color-danger){% else %}#B27B17{% endif %}; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="alert-triangle" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                            <span>{{ item.safety_summary }}</span>
+                        </div>
+
+                        <!-- Detailed Traversal Breakdown -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; font-size: 0.85rem;">
+                            <!-- Direct Matching Ingredients -->
+                            {% if item.matched_ingredients %}
+                                <div style="background: var(--color-cream); padding: 1rem; border-radius: 8px; border: 1px solid var(--color-border);">
+                                    <strong style="display: block; color: var(--color-deep); margin-bottom: 0.5rem;">
+                                        Responsible Ingredient(s) Triggering Allergen:
+                                    </strong>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                        {% for ing in item.matched_ingredients %}
+                                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.35rem; border-bottom: 1px dashed var(--color-border);">
+                                                <div>
+                                                    <a href="/ingredients/{{ ing.ingredient_id }}" style="font-weight: 600; color: var(--color-forest);">{{ ing.ingredient_name }}</a>
+                                                    <div style="font-size: 0.75rem; color: var(--color-text-muted);">
+                                                        Spec: {{ ing.source_reference or 'Pending documentation' }}
+                                                    </div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <span class="badge badge-red" style="font-size: 0.65rem;">{{ ing.allergen_name }}</span>
+                                                    <div style="font-size: 0.7rem; color: var(--color-text-muted);">{{ ing.verification_status }}</div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!-- Precautionary Cross-Contact -->
+                            {% if item.matched_may_contain %}
+                                <div style="background: var(--color-warning-light); padding: 1rem; border-radius: 8px; border: 1px solid rgba(229, 168, 50, 0.3);">
+                                    <strong style="display: block; color: #8A6110; margin-bottom: 0.5rem;">
+                                        Precautionary Cross-Contact Warnings (MAY_CONTAIN):
+                                    </strong>
+                                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                        {% for ma in item.matched_may_contain %}
+                                            <span class="badge badge-amber">{{ ma.allergen_name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    <p style="font-size: 0.775rem; color: #8A6110; margin-top: 0.5rem; line-height: 1.4;">
+                                        Kitchen alert: Handled on shared line, fryers, or cookware.
+                                    </p>
+                                </div>
+                            {% endif %}
+
+                            <!-- Incomplete Data Notification -->
+                            {% if item.is_incomplete %}
+                                <div style="background: #FFF5F5; padding: 1rem; border-radius: 8px; border: 1px solid rgba(199, 71, 71, 0.25);">
+                                    <strong style="display: block; color: var(--color-danger); margin-bottom: 0.35rem;">
+                                        Incomplete Recipe Record
+                                    </strong>
+                                    <p style="font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.4;">
+                                        Only {{ item.total_ingredients_recorded }} ingredient(s) documented. Data status is <strong>{{ item.ingredient_data_status }}</strong>. Do not assume dishes without recorded allergens are safe. Always confirm with chef.
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card" style="padding: 3rem; text-align: center;">
+            <i data-lucide="check-circle-2" style="width: 48px; height: 48px; color: var(--color-forest); margin-bottom: 1rem;"></i>
+            <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">No Recorded Matches in Stored Data</h3>
+            <p style="color: var(--color-text-muted); max-width: 600px; margin: 0 auto 1.5rem; font-size: 0.95rem;">
+                No dishes in the selected restaurants matched the requested allergen criteria. However, please remember that the absence of recorded allergens does not guarantee an allergy-free environment.
+            </p>
+            <a href="/allergy-checker" class="btn btn-secondary">Adjust Search Criteria</a>
+        </div>
+    {% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}{{ restaurant.name }} — Restaurant Details{% endblock %}
+{% block breadcrumb %}
+    <a href="/restaurants">Restaurants</a>
+    <span>/</span>
+    <span class="current">{{ restaurant.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+            <h1 style="font-size: 2.1rem;">{{ restaurant.name }}</h1>
+            <span class="badge {% if restaurant.status == 'ACTIVE' %}badge-green{% else %}badge-red{% endif %}">
+                {{ restaurant.status }}
+            </span>
+        </div>
+        <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+            {{ restaurant.cuisine_type }} &bull; {{ restaurant.city }}
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+        {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+            <a href="/restaurants/{{ restaurant.id }}/edit" class="btn btn-secondary">
+                <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                <span>Edit Profile</span>
+            </a>
+        {% endif %}
+        <a href="/graph?search={{ restaurant.name }}" class="btn btn-outline-forest">
+            <i data-lucide="network" style="width: 16px; height: 16px;"></i>
+            <span>Inspect in Graph</span>
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+    <!-- Main Info & Menu Section -->
+    <div>
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="info" style="width: 18px; height: 18px;"></i><span>About the Establishment</span></h3>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--color-text-main); line-height: 1.6; margin-bottom: 1.5rem;">
+                    {{ restaurant.description or 'No detailed profile description provided for this restaurant.' }}
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
+                    <div>
+                        <strong style="color: var(--color-text-muted); display: block; font-size: 0.775rem; text-transform: uppercase;">Address</strong>
+                        <div>{{ restaurant.address or 'Address on file not specified' }}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-text-muted); display: block; font-size: 0.775rem; text-transform: uppercase;">City Location</strong>
+                        <div>{{ restaurant.city }}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-text-muted); display: block; font-size: 0.775rem; text-transform: uppercase;">Phone</strong>
+                        <div>{{ restaurant.phone or 'Not listed' }}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-text-muted); display: block; font-size: 0.775rem; text-transform: uppercase;">Email Contact</strong>
+                        <div>{{ restaurant.email or 'Not listed' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Associated Menu Dishes -->
+        <div class="card">
+            <div class="card-header" style="justify-content: space-between;">
+                <h3 class="card-title">
+                    <i data-lucide="utensils" style="width: 18px; height: 18px;"></i>
+                    <span>Menu Offerings ({{ dishes | length }})</span>
+                </h3>
+                {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                    <a href="/dishes/new" class="btn btn-secondary btn-sm">
+                        <i data-lucide="plus" style="width: 14px; height: 14px;"></i>
+                        <span>Add Dish to Menu</span>
+                    </a>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Dish</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Allergens Present</th>
+                            <th>Precautionary</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if dishes %}
+                            {% for d in dishes %}
+                                <tr>
+                                    <td>
+                                        <a href="/dishes/{{ d.id }}" style="font-weight: 600; color: var(--color-deep);">
+                                            {{ d.name }}
+                                        </a>
+                                        {% if d.vegetarian or d.vegan %}
+                                            <div style="display: flex; gap: 0.25rem; margin-top: 0.25rem;">
+                                                {% if d.vegan %}<span class="badge badge-green" style="font-size: 0.65rem;">Vegan</span>{% elif d.vegetarian %}<span class="badge badge-green" style="font-size: 0.65rem;">Vegetarian</span>{% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ d.category }}</td>
+                                    <td style="font-weight: 600;">${{ "%.2f"|format(d.price) }}</td>
+                                    <td>
+                                        {% if d.allergens %}
+                                            <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                                                {% for a in d.allergens %}
+                                                    <span class="badge badge-red" style="font-size: 0.7rem;">{{ a.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span style="color: var(--color-text-muted); font-size: 0.8rem;">None recorded</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if d.may_contain_allergens %}
+                                            <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                                                {% for ma in d.may_contain_allergens %}
+                                                    <span class="badge badge-amber" style="font-size: 0.7rem;">May: {{ ma.name }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span style="color: var(--color-text-muted); font-size: 0.8rem;">None</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="/dishes/{{ d.id }}" class="btn btn-secondary btn-sm">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No dishes are currently attached to this restaurant menu.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Quick Stats & Screening -->
+    <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="shield-check" style="width: 18px; height: 18px;"></i><span>Safety Screening</span></h3>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+                    Filter this specific restaurant's menu against your allergen sensitivities.
+                </p>
+                <a href="/allergy-checker?restaurant={{ restaurant.id }}" class="btn btn-primary" style="width: 100%;">
+                    <i data-lucide="search-check" style="width: 16px; height: 16px;"></i>
+                    <span>Screen This Menu</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="database" style="width: 18px; height: 18px;"></i><span>Metadata</span></h3>
+            </div>
+            <div class="card-body" style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                <div>
+                    <span style="color: var(--color-text-muted);">Entity ID:</span>
+                    <code style="font-size: 0.75rem; word-break: break-all;">{{ restaurant.id }}</code>
+                </div>
+                <div>
+                    <span style="color: var(--color-text-muted);">Registered:</span>
+                    <div>{{ restaurant.created_at[:10] if restaurant.created_at else 'Unknown' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

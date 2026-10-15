@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied — AllerGraph{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 5rem 1.5rem; max-width: 600px; margin: 0 auto;">
+    <div style="font-size: 5rem; font-family: var(--font-heading); font-weight: 800; color: var(--color-danger); line-height: 1;">403</div>
+    <h2 style="font-size: 1.75rem; margin: 1rem 0 0.5rem; color: var(--color-deep);">Access Denied</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+        You do not have the required role or permissions to access this administrative section.
+    </p>
+    <a href="/dashboard" class="btn btn-primary btn-lg">Return to Dashboard</a>
+</div>
+{% endblock %}
+
+{% block public_content %}
+<div style="text-align: center; padding: 5rem 1.5rem; max-width: 600px; margin: 0 auto;">
+    <div style="font-size: 5rem; font-family: var(--font-heading); font-weight: 800; color: var(--color-danger); line-height: 1;">403</div>
+    <h2 style="font-size: 1.75rem; margin: 1rem 0 0.5rem; color: var(--color-deep);">Access Denied</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+        You do not have sufficient permissions to access this area.
+    </p>
+    <a href="/login" class="btn btn-primary btn-lg">Sign In</a>
+</div>
+{% endblock %}

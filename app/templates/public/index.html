@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}AllerGraph — Understand Every Ingredient. Make Informed Choices.{% endblock %}
+
+{% block public_content %}
+<!-- Hero Section -->
+<section style="background: linear-gradient(180deg, #FFFFFF 0%, var(--color-sage-light) 100%); padding: 5rem 1.5rem 4rem; border-bottom: 1px solid var(--color-border);">
+    <div style="max-width: 1100px; margin: 0 auto; text-align: center;">
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background-color: var(--color-sage); color: var(--color-forest); padding: 0.35rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.5rem;">
+            <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+            <span>Graph Database Food Intelligence</span>
+        </div>
+        <h1 style="font-size: 3.25rem; font-weight: 800; color: var(--color-deep); line-height: 1.15; margin-bottom: 1.25rem; letter-spacing: -0.02em;">
+            Understand Every Ingredient.<br>Make Informed Choices.
+        </h1>
+        <p style="font-size: 1.15rem; color: var(--color-text-muted); max-width: 720px; margin: 0 auto 2.5rem; line-height: 1.6;">
+            Navigate restaurant menus with confidence. AllerGraph traces multi-layered relationships between dining spots, recipes, ingredients, and major allergens using real graph traversal.
+        </p>
+
+        <!-- Quick Screening CTA Bar -->
+        <div class="card" style="max-width: 800px; margin: 0 auto 2rem; padding: 1.5rem; box-shadow: var(--shadow-lg);">
+            <form action="/allergy-checker" method="GET" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <label class="form-label" style="text-align: left;">What allergens do you manage?</label>
+                        <select name="allergens" class="form-control" style="cursor: pointer;">
+                            <option value="">-- Choose Allergen to Screen --</option>
+                            {% for a in allergens %}
+                                <option value="{{ a.id }}">{{ a.name }} ({{ a.allergen_category }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="min-width: 160px; display: flex; align-items: flex-end;">
+                        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                            <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                            <span>Screen Menus</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; font-size: 0.85rem; color: var(--color-text-muted);">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="check-circle-2" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                <span>Multi-Hop Traversal</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="check-circle-2" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                <span>Cross-Contact Warnings</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <i data-lucide="check-circle-2" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                <span>Ingredient Verification Audit</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section style="padding: 4.5rem 1.5rem; max-width: 1100px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 3.5rem;">
+        <h2 style="font-size: 2rem; margin-bottom: 0.75rem;">How AllerGraph Uncovers Hidden Allergens</h2>
+        <p style="color: var(--color-text-muted); max-width: 600px; margin: 0 auto;">
+            Traditional relational tables flatten ingredients and miss secondary allergen pathways. Our Neo4j knowledge graph models reality.
+        </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+        <div class="card" style="padding: 2rem; text-align: center;">
+            <div style="width: 54px; height: 54px; border-radius: 14px; background: var(--color-sage); color: var(--color-forest); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+                <i data-lucide="store" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.6rem;">1. Restaurant & Menu</h3>
+            <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.5;">
+                Restaurants offer dishes with exact preparation details, recipe variations, and designated kitchen stations.
+            </p>
+        </div>
+
+        <div class="card" style="padding: 2rem; text-align: center;">
+            <div style="width: 54px; height: 54px; border-radius: 14px; background: var(--color-info-light); color: var(--color-info); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+                <i data-lucide="git-fork" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.6rem;">2. Deep Composition</h3>
+            <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.5;">
+                Dishes decompose into raw ingredients, seasonings, and commercial blends with verified supplier specifications.
+            </p>
+        </div>
+
+        <div class="card" style="padding: 2rem; text-align: center;">
+            <div style="width: 54px; height: 54px; border-radius: 14px; background: var(--color-danger-light); color: var(--color-danger); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+                <i data-lucide="shield-alert" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.6rem;">3. Allergen Linkages</h3>
+            <p style="color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.5;">
+                Graph traversals identify direct allergen presence as well as precautionary cross-contact (<code>MAY_CONTAIN</code>) risks.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Sample Ingredient Graph Preview -->
+<section style="background-color: var(--color-white); padding: 4.5rem 1.5rem; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);">
+    <div style="max-width: 1100px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span class="badge badge-green" style="margin-bottom: 0.5rem;">Interactive Network</span>
+                <h2 style="font-size: 2rem;">Real-Time Graph Traversal Engine</h2>
+                <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+                    Inspect connected nodes across Restaurants (green), Dishes (orange), Ingredients (blue), and Allergens (red).
+                </p>
+            </div>
+            <a href="/graph" class="btn btn-outline-forest">
+                <span>Launch Graph Explorer</span>
+                <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </a>
+        </div>
+
+        <div class="card" style="padding: 1.5rem;">
+            <div id="cy-container" style="height: 480px;">
+                <div class="graph-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background-color: #245C46;"></span><span>Restaurant</span></div>
+                    <div class="legend-item"><span class="legend-dot" style="background-color: #DD6B20;"></span><span>Dish</span></div>
+                    <div class="legend-item"><span class="legend-dot" style="background-color: #3182CE;"></span><span>Ingredient</span></div>
+                    <div class="legend-item"><span class="legend-dot" style="background-color: #C74747;"></span><span>Allergen</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Food Data Transparency & Disclaimer Banner -->
+<section style="padding: 4rem 1.5rem; max-width: 900px; margin: 0 auto;">
+    <div class="disclaimer-banner">
+        <i data-lucide="alert-triangle" class="disclaimer-banner-icon"></i>
+        <div>
+            <strong style="display: block; font-size: 0.95rem; margin-bottom: 0.35rem; color: #5D3E04;">Important Food Safety Disclaimer</strong>
+            AllerGraph is an informational screening platform intended to assist consumers and culinary teams in understanding food compositions. It cannot guarantee that a dish is 100% free from trace allergens, unnoticed supplier formulation changes, or kitchen cross-contact. Always verify preparation practices and current ingredients directly with restaurant management, especially when managing severe or life-threatening anaphylactic food allergies.
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 2.5rem;">
+        <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Ready to Explore Menu Intelligence?</h3>
+        <p style="color: var(--color-text-muted); margin-bottom: 1.5rem;">Create a free account or sign in to browse verified restaurant menus and check allergen combinations.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="/register" class="btn btn-primary btn-lg">Create Free Account</a>
+            <a href="/login" class="btn btn-secondary btn-lg">Sign In</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Load preview graph data from API
+    fetch('/api/graph/data?limit=25')
+        .then(res => res.json())
+        .then(data => {
+            const cy = cytoscape({
+                container: document.getElementById('cy-container'),
+                elements: [
+                    ...data.nodes.map(n => ({ data: n.data })),
+                    ...data.edges.map(e => ({ data: e.data }))
+                ],
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'background-color': 'data(color)',
+                            'color': '#202A24',
+                            'font-family': 'Inter, sans-serif',
+                            'font-size': '11px',
+                            'text-valign': 'bottom',
+                            'text-margin-y': 4,
+                            'width': 26,
+                            'height': 26
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 1.5,
+                            'line-color': '#CBD5E0',
+                            'target-arrow-color': '#A0AEC0',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'arrow-scale': 0.8
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'cose',
+                    animate: false,
+                    nodeRepulsion: 450000,
+                    idealEdgeLength: 80
+                }
+            });
+        })
+        .catch(err => console.error("Could not load preview graph:", err));
+});
+</script>
+{% endblock %}

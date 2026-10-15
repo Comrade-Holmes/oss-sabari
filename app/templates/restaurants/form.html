@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit {{ restaurant.name }}{% else %}New Restaurant{% endif %} — AllerGraph{% endblock %}
+{% block breadcrumb %}
+    <a href="/restaurants">Restaurants</a>
+    <span>/</span>
+    <span class="current">{% if is_edit %}Edit Restaurant{% else %}Create Restaurant{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.85rem;">{% if is_edit %}Edit Restaurant Profile{% else %}Register New Partner Restaurant{% endif %}</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Fill in culinary details, location, and operating status</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 2.25rem;">
+            {% if error %}
+                <div style="background-color: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.3); color: var(--color-danger); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.5rem;">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form action="{% if is_edit %}/restaurants/{{ restaurant.id }}/edit{% else %}/restaurants/new{% endif %}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="form-group">
+                    <label class="form-label">Restaurant Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. The Sage & Thyme Kitchen" value="{{ restaurant.name if restaurant else '' }}" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Profile Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Artisanal Mediterranean and farm-to-table culinary experiences...">{{ restaurant.description if restaurant else '' }}</textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Cuisine Type</label>
+                        <input type="text" name="cuisine_type" class="form-control" placeholder="e.g. Modern European" value="{{ restaurant.cuisine_type if restaurant else 'Various' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">City *</label>
+                        <input type="text" name="city" class="form-control" placeholder="e.g. Seattle" value="{{ restaurant.city if restaurant else '' }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Street Address</label>
+                    <input type="text" name="address" class="form-control" placeholder="402 Pine Street, Downtown" value="{{ restaurant.address if restaurant else '' }}">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone" class="form-control" placeholder="+1 (206) 555-0142" value="{{ restaurant.phone if restaurant else '' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Contact Email</label>
+                        <input type="email" name="email" class="form-control" placeholder="chef@restaurant.local" value="{{ restaurant.email if restaurant else '' }}">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Operating Status</label>
+                    <select name="status" class="form-control">
+                        <option value="ACTIVE" {% if restaurant and restaurant.status == 'ACTIVE' %}selected{% endif %}>Active Partner</option>
+                        <option value="INACTIVE" {% if restaurant and restaurant.status == 'INACTIVE' %}selected{% endif %}>Inactive / Suspended</option>
+                    </select>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; border-top: 1px solid var(--color-border); padding-top: 1.25rem;">
+                    <a href="{% if is_edit %}/restaurants/{{ restaurant.id }}{% else %}/restaurants{% endif %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>{% if is_edit %}Save Changes{% else %}Create Restaurant{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Reports & Analytics</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Culinary Intelligence Reports & Audits</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+            Real-time Neo4j analytical aggregations, verification coverage, and data quality diagnostics
+        </p>
+    </div>
+
+    <!-- Export Quick Dropdown -->
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="/api/reports/export/unverified_ingredients" class="btn btn-secondary btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Export Unverified (CSV)</span>
+        </a>
+        <a href="/api/reports/export/incomplete_dishes" class="btn btn-secondary btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Export Incomplete Dishes (CSV)</span>
+        </a>
+        <a href="/api/reports/export/allergen_distribution" class="btn btn-secondary btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Export Allergen Dist (CSV)</span>
+        </a>
+    </div>
+</div>
+
+<!-- Notice banner -->
+<div style="background-color: var(--color-sage-light); border: 1px solid var(--color-border); border-radius: 8px; padding: 0.85rem 1.25rem; margin-bottom: 2rem; font-size: 0.85rem; color: var(--color-forest); display: flex; align-items: center; gap: 0.6rem;">
+    <i data-lucide="info" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+    <span><strong>Note on Data Scope:</strong> These reports summarize the application's stored graph records and are distinguished from general real-world allergen epidemiology or certified dining guarantees.</span>
+</div>
+
+<!-- Charts Section -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Chart 1: Allergen Connections -->
+    <div class="card">
+        <div class="card-header" style="justify-content: space-between;">
+            <h3 class="card-title"><i data-lucide="bar-chart" style="width: 18px; height: 18px;"></i><span>Allergen Frequency in Menu Records</span></h3>
+        </div>
+        <div class="card-body">
+            <canvas id="repAllergenChart" height="230"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Restaurant Menu Volume -->
+    <div class="card">
+        <div class="card-header" style="justify-content: space-between;">
+            <h3 class="card-title"><i data-lucide="store" style="width: 18px; height: 18px;"></i><span>Dishes Offered Per Restaurant</span></h3>
+        </div>
+        <div class="card-body">
+            <canvas id="repRestaurantChart" height="230"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Report Table 1: Unverified Ingredients Requiring Action -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header" style="justify-content: space-between;">
+        <h3 class="card-title">
+            <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: var(--color-warning);"></i>
+            <span>Unverified Ingredients Audit</span>
+        </h3>
+        <a href="/api/reports/export/unverified_ingredients" class="btn btn-secondary btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Download CSV</span>
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ingredient</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Source Reference Note</th>
+                    <th>Affected Dishes</th>
+                    <th>Affected Restaurants</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if unverified_ingredients %}
+                    {% for item in unverified_ingredients %}
+                        <tr>
+                            <td style="font-weight: 600;">
+                                <a href="/ingredients/{{ item.id }}">{{ item.name }}</a>
+                            </td>
+                            <td>{{ item.category }}</td>
+                            <td><span class="badge badge-amber">{{ item.status }}</span></td>
+                            <td style="font-size: 0.825rem; color: var(--color-text-muted);">{{ item.source }}</td>
+                            <td>{{ item.affected_dishes }} dishes</td>
+                            <td>{{ item.affected_restaurants }} locations</td>
+                            <td>
+                                {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                                    <a href="/ingredients/{{ item.id }}/edit" class="btn btn-secondary btn-sm">Verify Spec</a>
+                                {% else %}
+                                    <a href="/ingredients/{{ item.id }}" class="btn btn-secondary btn-sm">Inspect</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No unverified ingredients found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Report Table 2: Dishes with Incomplete Data -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header" style="justify-content: space-between;">
+        <h3 class="card-title">
+            <i data-lucide="help-circle" style="width: 18px; height: 18px; color: var(--color-danger);"></i>
+            <span>Dishes Requiring Ingredient Recipe Completion</span>
+        </h3>
+        <a href="/api/reports/export/incomplete_dishes" class="btn btn-secondary btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Download CSV</span>
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Dish</th>
+                    <th>Category</th>
+                    <th>Restaurant</th>
+                    <th>Recorded Ingredients</th>
+                    <th>Data Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if incomplete_dishes %}
+                    {% for item in incomplete_dishes %}
+                        <tr>
+                            <td style="font-weight: 600;">
+                                <a href="/dishes/{{ item.id }}">{{ item.name }}</a>
+                            </td>
+                            <td>{{ item.category }}</td>
+                            <td>{{ item.restaurant_name or 'Unlinked' }} ({{ item.city }})</td>
+                            <td>{{ item.ingredient_count }} ingredients</td>
+                            <td><span class="badge badge-red">{{ item.data_status }}</span></td>
+                            <td>
+                                {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                                    <a href="/dishes/{{ item.id }}/edit" class="btn btn-secondary btn-sm">Complete Recipe</a>
+                                {% else %}
+                                    <a href="/dishes/{{ item.id }}" class="btn btn-secondary btn-sm">Inspect</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 2rem;">All menu dishes have complete ingredient data.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Report Table 3: Data Quality Issues -->
+<div class="card">
+    <div class="card-header" style="justify-content: space-between;">
+        <h3 class="card-title">
+            <i data-lucide="shield-alert" style="width: 18px; height: 18px;"></i>
+            <span>Data Integrity & Quality Diagnostics</span>
+        </h3>
+        <a href="/api/reports/export/data_quality" class="btn btn-secondary btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Download CSV</span>
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Entity</th>
+                    <th>Identified Issue</th>
+                    <th>Severity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if quality_issues %}
+                    {% for q in quality_issues %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ q.name }}</td>
+                            <td style="color: var(--color-text-main);">{{ q.issue }}</td>
+                            <td>
+                                <span class="badge {% if q.severity == 'HIGH' %}badge-red{% elif q.severity == 'MEDIUM' %}badge-amber{% else %}badge-blue{% endif %}">
+                                    {{ q.severity }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: var(--color-forest); padding: 2rem;">Zero data quality violations detected! Knowledge graph is in a healthy state.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Allergen Frequency Chart
+    const allergenData = {{ allergen_dist | tojson }};
+    new Chart(document.getElementById('repAllergenChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: allergenData.map(d => d.allergen_name),
+            datasets: [
+                {
+                    label: 'Menu Dishes Associated',
+                    data: allergenData.map(d => d.dish_count),
+                    backgroundColor: '#E5A832',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Ingredients Linked',
+                    data: allergenData.map(d => d.ingredient_count),
+                    backgroundColor: '#245C46',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+
+    // 2. Restaurant Distribution Chart
+    const restData = {{ rest_dist | tojson }};
+    new Chart(document.getElementById('repRestaurantChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: restData.map(d => d.restaurant_name),
+            datasets: [{
+                label: 'Dishes Offered',
+                data: restData.map(d => d.dish_count),
+                backgroundColor: '#3182CE',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+});
+</script>
+{% endblock %}

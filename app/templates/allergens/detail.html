@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{{ allergen.name }} — Allergen Network{% endblock %}
+{% block breadcrumb %}
+    <a href="/allergens">Allergens</a>
+    <span>/</span>
+    <span class="current">{{ allergen.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+            <h1 style="font-size: 2.1rem;">{{ allergen.name }}</h1>
+            <span class="badge badge-red">{{ allergen.allergen_category }}</span>
+        </div>
+        <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+            Found across {{ allergen.ingredient_count }} ingredients and {{ allergen.dish_count }} menu dishes
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+        {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+            <a href="/allergens/{{ allergen.id }}/edit" class="btn btn-secondary">
+                <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                <span>Edit Allergen</span>
+            </a>
+        {% endif %}
+        <a href="/allergy-checker?allergens={{ allergen.id }}" class="btn btn-primary">
+            <i data-lucide="search-check" style="width: 16px; height: 16px;"></i>
+            <span>Screen All Menus for {{ allergen.name }}</span>
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <div>
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="info" style="width: 18px; height: 18px;"></i><span>Allergen Definition</span></h3>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--color-text-main); font-size: 1rem; line-height: 1.6;">
+                    {{ allergen.description or 'No clinical or culinary description recorded.' }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Directly Linked Ingredients -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="leaf" style="width: 18px; height: 18px; color: var(--color-forest);"></i>
+                    <span>Associated Raw Ingredients ({{ connections.ingredients | length }})</span>
+                </h3>
+            </div>
+            <div class="card-body">
+                {% if connections.ingredients %}
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        {% for ing in connections.ingredients %}
+                            <a href="/ingredients/{{ ing.id }}" class="btn btn-secondary btn-sm" style="font-size: 0.85rem;">
+                                <i data-lucide="external-link" style="width: 12px; height: 12px;"></i>
+                                <span>{{ ing.name }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="color: var(--color-text-muted); font-size: 0.9rem;">No ingredients are currently linked to this allergen.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Affected Dishes (Direct or May Contain) -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i data-lucide="utensils" style="width: 18px; height: 18px; color: #DD6B20;"></i>
+                    <span>Menu Dishes with {{ allergen.name }} Evidence ({{ connections.dishes | length }})</span>
+                </h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Dish Name</th>
+                            <th>Link Type</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if connections.dishes %}
+                            {% for d in connections.dishes %}
+                                <tr>
+                                    <td style="font-weight: 600;">
+                                        <a href="/dishes/{{ d.id }}" style="color: var(--color-deep);">{{ d.name }}</a>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if 'Direct' in d.type %}badge-red{% else %}badge-amber{% endif %}">
+                                            {{ d.type }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="/dishes/{{ d.id }}" class="btn btn-secondary btn-sm">Inspect</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--color-text-muted); padding: 1.5rem;">No menu dishes currently connect to this allergen.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Graph & Safety Info -->
+    <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="network" style="width: 18px; height: 18px;"></i><span>Graph Visualization</span></h3>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+                    Launch the interactive Graph Explorer focused specifically on {{ allergen.name }} pathways.
+                </p>
+                <a href="/graph?search={{ allergen.name }}" class="btn btn-outline-forest" style="width: 100%;">
+                    <i data-lucide="git-branch" style="width: 16px; height: 16px;"></i>
+                    <span>Trace Allergen Paths</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="database" style="width: 18px; height: 18px;"></i><span>Node Identifier</span></h3>
+            </div>
+            <div class="card-body" style="font-size: 0.85rem;">
+                <span style="color: var(--color-text-muted); display: block; margin-bottom: 0.25rem;">Node ID:</span>
+                <code style="word-break: break-all; font-size: 0.75rem;">{{ allergen.id }}</code>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

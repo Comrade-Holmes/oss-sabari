@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">My Profile</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.85rem;">Account Profile & Security</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Manage your personal information, update your password, and review account details</p>
+    </div>
+
+    <!-- Profile Overview Card -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="user" style="width: 18px; height: 18px;"></i><span>Profile Information</span></h3>
+        </div>
+        <div class="card-body" style="padding: 2rem;">
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border);">
+                <div class="user-avatar" style="width: 64px; height: 64px; font-size: 1.5rem;">
+                    {{ (current_user.full_name or 'U')[0] | upper }}
+                </div>
+                <div>
+                    <h2 style="font-size: 1.35rem; color: var(--color-deep);">{{ current_user.full_name }}</h2>
+                    <div style="font-size: 0.875rem; color: var(--color-text-muted);">{{ current_user.email }}</div>
+                    <div style="margin-top: 0.4rem;">
+                        <span class="badge {% if current_user.role == 'ADMIN' %}badge-green{% elif current_user.role == 'EDITOR' %}badge-blue{% else %}badge-gray{% endif %}">
+                            Role: {{ current_user.role }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <form action="/profile" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="update_profile">
+
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-control" value="{{ current_user.full_name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address (Read-only)</label>
+                    <input type="email" class="form-control" value="{{ current_user.email }}" disabled style="background: var(--color-cream); cursor: not-allowed;">
+                    <div class="form-text">To change your primary email address, please contact an administrator.</div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="save" style="width: 16px; height: 16px;"></i>
+                        <span>Save Profile Changes</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Password Change Card -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="lock" style="width: 18px; height: 18px;"></i><span>Change Password</span></h3>
+        </div>
+        <div class="card-body" style="padding: 2rem;">
+            <form action="/profile" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="action" value="change_password">
+
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" name="current_password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" name="new_password" class="form-control" placeholder="Min. 8 chars, 1 uppercase, 1 lowercase, 1 digit" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" name="confirm_password" class="form-control" placeholder="Re-type new password" required>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="key" style="width: 16px; height: 16px;"></i>
+                        <span>Update Password</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="calendar" style="width: 18px; height: 18px;"></i><span>Account History</span></h3>
+        </div>
+        <div class="card-body" style="font-size: 0.875rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <span style="color: var(--color-text-muted);">Account Created:</span>
+                    <div style="font-weight: 500;">{{ current_user.created_at[:19].replace('T', ' ') if current_user.created_at else 'N/A' }}</div>
+                </div>
+                <div>
+                    <span style="color: var(--color-text-muted);">Last Updated:</span>
+                    <div style="font-weight: 500;">{{ current_user.updated_at[:19].replace('T', ' ') if current_user.updated_at else 'N/A' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

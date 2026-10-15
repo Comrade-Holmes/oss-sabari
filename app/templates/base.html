@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AllerGraph — Food Allergy & Ingredient Intelligence Platform{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Understand Every Ingredient. Make Informed Choices. Graph-powered allergen detection and food intelligence.{% endblock %}">
+    
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Toast Notifications -->
+    <div class="toast-container">
+        {% if flashed_messages %}
+            {% for msg in flashed_messages %}
+                <div class="toast toast-{{ msg.category }}">
+                    <div style="font-size: 0.875rem; font-weight: 500;">{{ msg.message }}</div>
+                    <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Global Action Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="card-header">
+                <h3 id="modal-title" class="card-title">Confirm Action</h3>
+            </div>
+            <div class="card-body">
+                <p id="modal-message" style="color: var(--color-text-muted); font-size: 0.95rem;">Are you sure you wish to execute this operation?</p>
+            </div>
+            <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button type="button" id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="modal-confirm-btn" class="btn btn-danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user %}
+        <!-- Authenticated Application Shell -->
+        <div class="app-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-brand">
+                    <a href="/dashboard" class="brand-logo">
+                        <div class="brand-icon">
+                            <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <span>AllerGraph</span>
+                    </a>
+                </div>
+
+                <ul class="sidebar-menu">
+                    <!-- Dynamic navigation based on role -->
+                    {% set role = (current_user.role or 'VIEWER') | upper %}
+
+                    {% if role == 'ADMIN' %}
+                        <div class="sidebar-section-title">Core Administration</div>
+                        <li><a href="/dashboard" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}"><i data-lucide="layout-dashboard"></i><span>Overview</span></a></li>
+                        <li><a href="/restaurants" class="sidebar-link {% if active_page == 'restaurants' %}active{% endif %}"><i data-lucide="store"></i><span>Restaurants</span></a></li>
+                        <li><a href="/dishes" class="sidebar-link {% if active_page == 'dishes' %}active{% endif %}"><i data-lucide="utensils"></i><span>Dishes & Menus</span></a></li>
+                        <li><a href="/ingredients" class="sidebar-link {% if active_page == 'ingredients' %}active{% endif %}"><i data-lucide="leaf"></i><span>Ingredients</span></a></li>
+                        <li><a href="/allergens" class="sidebar-link {% if active_page == 'allergens' %}active{% endif %}"><i data-lucide="alert-triangle"></i><span>Allergens</span></a></li>
+
+                        <div class="sidebar-section-title">Intelligence & Graph</div>
+                        <li><a href="/allergy-checker" class="sidebar-link {% if active_page == 'allergy_checker' %}active{% endif %}"><i data-lucide="search-check"></i><span>Allergy Checker</span></a></li>
+                        <li><a href="/graph" class="sidebar-link {% if active_page == 'graph' %}active{% endif %}"><i data-lucide="network"></i><span>Ingredient Graph</span></a></li>
+                        <li><a href="/reports" class="sidebar-link {% if active_page == 'reports' %}active{% endif %}"><i data-lucide="bar-chart-3"></i><span>Reports & Analytics</span></a></li>
+
+                        <div class="sidebar-section-title">System & Security</div>
+                        <li><a href="/users" class="sidebar-link {% if active_page == 'users' %}active{% endif %}"><i data-lucide="users"></i><span>User Management</span></a></li>
+                        <li><a href="/activity-logs" class="sidebar-link {% if active_page == 'activity_logs' %}active{% endif %}"><i data-lucide="history"></i><span>Activity Logs</span></a></li>
+                        <li><a href="/settings" class="sidebar-link {% if active_page == 'settings' %}active{% endif %}"><i data-lucide="settings"></i><span>Settings & Health</span></a></li>
+                    
+                    {% elif role == 'EDITOR' %}
+                        <div class="sidebar-section-title">Data Operations</div>
+                        <li><a href="/dashboard" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}"><i data-lucide="layout-dashboard"></i><span>Overview</span></a></li>
+                        <li><a href="/restaurants" class="sidebar-link {% if active_page == 'restaurants' %}active{% endif %}"><i data-lucide="store"></i><span>Restaurants</span></a></li>
+                        <li><a href="/dishes" class="sidebar-link {% if active_page == 'dishes' %}active{% endif %}"><i data-lucide="utensils"></i><span>Dishes & Menus</span></a></li>
+                        <li><a href="/ingredients" class="sidebar-link {% if active_page == 'ingredients' %}active{% endif %}"><i data-lucide="leaf"></i><span>Ingredients</span></a></li>
+                        <li><a href="/allergens" class="sidebar-link {% if active_page == 'allergens' %}active{% endif %}"><i data-lucide="alert-triangle"></i><span>Allergens</span></a></li>
+
+                        <div class="sidebar-section-title">Intelligence</div>
+                        <li><a href="/allergy-checker" class="sidebar-link {% if active_page == 'allergy_checker' %}active{% endif %}"><i data-lucide="search-check"></i><span>Allergy Checker</span></a></li>
+                        <li><a href="/graph" class="sidebar-link {% if active_page == 'graph' %}active{% endif %}"><i data-lucide="network"></i><span>Ingredient Graph</span></a></li>
+                        <li><a href="/reports" class="sidebar-link {% if active_page == 'reports' %}active{% endif %}"><i data-lucide="bar-chart-3"></i><span>Reports</span></a></li>
+
+                    {% else %}
+                        <!-- VIEWER Navigation -->
+                        <div class="sidebar-section-title">Explorer</div>
+                        <li><a href="/dashboard" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}"><i data-lucide="layout-dashboard"></i><span>My Dashboard</span></a></li>
+                        <li><a href="/restaurants" class="sidebar-link {% if active_page == 'restaurants' %}active{% endif %}"><i data-lucide="store"></i><span>Explore Restaurants</span></a></li>
+                        <li><a href="/dishes" class="sidebar-link {% if active_page == 'dishes' %}active{% endif %}"><i data-lucide="utensils"></i><span>Browse Dishes</span></a></li>
+                        <li><a href="/ingredients" class="sidebar-link {% if active_page == 'ingredients' %}active{% endif %}"><i data-lucide="leaf"></i><span>Ingredients</span></a></li>
+                        <li><a href="/allergens" class="sidebar-link {% if active_page == 'allergens' %}active{% endif %}"><i data-lucide="alert-triangle"></i><span>Allergens</span></a></li>
+
+                        <div class="sidebar-section-title">Tools</div>
+                        <li><a href="/allergy-checker" class="sidebar-link {% if active_page == 'allergy_checker' %}active{% endif %}"><i data-lucide="search-check"></i><span>Allergy Checker</span></a></li>
+                        <li><a href="/graph" class="sidebar-link {% if active_page == 'graph' %}active{% endif %}"><i data-lucide="network"></i><span>Ingredient Graph</span></a></li>
+                    {% endif %}
+
+                    <div class="sidebar-section-title">Account</div>
+                    <li><a href="/profile" class="sidebar-link {% if active_page == 'profile' %}active{% endif %}"><i data-lucide="user"></i><span>My Profile</span></a></li>
+                    <li><a href="/logout" class="sidebar-link" style="color: #F87171;"><i data-lucide="log-out"></i><span>Sign Out</span></a></li>
+                </ul>
+
+                <div class="sidebar-footer">
+                    <a href="/profile" class="user-snippet">
+                        <div class="user-avatar">
+                            {{ (current_user.full_name or 'U')[0] | upper }}
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">{{ current_user.full_name }}</div>
+                            <span class="user-role-badge">{{ current_user.role }}</span>
+                        </div>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Main Workspace Area -->
+            <div class="main-wrapper">
+                <header class="top-navbar">
+                    <div class="breadcrumbs">
+                        <a href="/dashboard"><i data-lucide="home" style="width: 16px; height: 16px;"></i></a>
+                        <span>/</span>
+                        {% block breadcrumb %}<span class="current">Overview</span>{% endblock %}
+                    </div>
+
+                    <div class="nav-controls">
+                        <!-- Global Search Input -->
+                        <div class="search-box">
+                            <i data-lucide="search" class="search-box-icon" style="width: 16px; height: 16px;"></i>
+                            <input type="text" id="global-search-input" placeholder="Search dishes, ingredients, allergens..." autocomplete="off">
+                        </div>
+
+                        <!-- User Quick Dropdown Link -->
+                        <a href="/profile" class="btn btn-secondary btn-sm" title="My Profile">
+                            <i data-lucide="user" style="width: 16px; height: 16px;"></i>
+                            <span>{{ current_user.full_name.split(' ')[0] }}</span>
+                        </a>
+                    </div>
+                </header>
+
+                <main class="page-content">
+                    {% block content %}{% endblock %}
+                </main>
+            </div>
+        </div>
+    {% else %}
+        <!-- Public Website Header & Layout -->
+        <header class="public-header">
+            <div class="public-nav-container">
+                <a href="/" class="brand-logo" style="color: var(--color-deep);">
+                    <div class="brand-icon">
+                        <i data-lucide="shield-check" style="width: 20px; height: 20px;"></i>
+                    </div>
+                    <span>AllerGraph</span>
+                </a>
+
+                <nav>
+                    <ul class="public-nav-links">
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/allergy-checker">Allergy Checker</a></li>
+                        <li><a href="/graph">Graph Explorer</a></li>
+                        <li><a href="/privacy">Food Safety</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </nav>
+
+                <div style="display: flex; align-items: center; gap: 0.85rem;">
+                    <a href="/login" class="btn btn-secondary btn-sm">Sign In</a>
+                    <a href="/register" class="btn btn-primary btn-sm">Get Started</a>
+                </div>
+            </div>
+        </header>
+
+        <main style="flex: 1;">
+            {% block public_content %}{% endblock %}
+        </main>
+
+        <footer class="public-footer">
+            <div class="public-footer-inner">
+                <div class="footer-col">
+                    <div class="brand-logo" style="margin-bottom: 1rem;">
+                        <div class="brand-icon">
+                            <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                        </div>
+                        <span style="color: var(--color-white);">AllerGraph</span>
+                    </div>
+                    <p style="font-size: 0.875rem; color: rgba(250, 248, 242, 0.7); max-width: 320px; line-height: 1.6;">
+                        Understand Every Ingredient. Make Informed Choices. Graph-powered food allergy and ingredient transparency platform built for modern dining safety.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <ul class="footer-links">
+                        <li><a href="/allergy-checker">Allergy Checker</a></li>
+                        <li><a href="/graph">Ingredient Graph Explorer</a></li>
+                        <li><a href="/restaurants">Partner Restaurants</a></li>
+                        <li><a href="/dishes">Dish Intelligence</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="/about">About Our Mission</a></li>
+                        <li><a href="/contact">Inquiries & Contact</a></li>
+                        <li><a href="/privacy">Privacy & Disclaimers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Safety Notice</h4>
+                    <p style="font-size: 0.8rem; color: rgba(250, 248, 242, 0.65); line-height: 1.5;">
+                        AllerGraph is an informational screening platform and does not provide medical diagnoses or absolute food safety guarantees. Always confirm preparation practices directly with restaurants.
+                    </p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div>&copy; 2026 AllerGraph Food Intelligence Platform. All rights reserved.</div>
+                <div>Production-Grade Academic Capstone Project</div>
+            </div>
+        </footer>
+    {% endif %}
+
+    <!-- Core App JS -->
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

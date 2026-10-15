@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Food Safety & Legal Disclaimer — AllerGraph{% endblock %}
+
+{% block public_content %}
+<div style="max-width: 900px; margin: 4rem auto; padding: 0 1.5rem;">
+    <div style="margin-bottom: 2.5rem;">
+        <span class="badge badge-amber" style="margin-bottom: 0.5rem;">Safety Notice & Legal Terms</span>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.75rem;">Food Safety Disclaimer & Privacy Policy</h1>
+        <p style="color: var(--color-text-muted); font-size: 1rem;">
+            Last updated: October 2026. Please review these essential guidelines before using AllerGraph.
+        </p>
+    </div>
+
+    <!-- Prominent Food Safety Alert -->
+    <div class="disclaimer-banner" style="margin-bottom: 2.5rem; padding: 1.5rem;">
+        <i data-lucide="alert-octagon" class="disclaimer-banner-icon" style="font-size: 1.8rem;"></i>
+        <div>
+            <h3 style="font-size: 1.15rem; color: #5D3E04; margin-bottom: 0.5rem;">Primary Food Safety Notice</h3>
+            <p style="margin-bottom: 0.75rem;">
+                <strong>AllerGraph is strictly an informational screening and discovery tool.</strong> Under no circumstances does this platform provide medical advice, diagnosis, treatment, or guaranteed certification of food safety.
+            </p>
+            <p>
+                Culinary environments are dynamic. Ingredient suppliers may change proprietary formulations without notice, and commercial kitchens frequently handle multiple allergens simultaneously. Always verbally confirm all ingredients, cooking surfaces, and preparation procedures directly with culinary staff prior to consumption.
+            </p>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-body" style="padding: 2.25rem;">
+            <h2 style="font-size: 1.4rem; margin-bottom: 1rem;">1. Data Accuracy & Verification Tiers</h2>
+            <p style="color: var(--color-text-main); margin-bottom: 1rem; line-height: 1.6;">
+                Food records within AllerGraph originate from restaurant-provided menus, public nutritional databases, and verified supplier spec sheets. Data is categorized into three verification states:
+            </p>
+            <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.6rem; color: var(--color-text-main);">
+                <li><strong>Verified:</strong> Accompanied by manufacturer allergen declarations or verified kitchen audit sheets.</li>
+                <li><strong>In-Review:</strong> Undergoing current nutritional or culinary assessment.</li>
+                <li><strong>Unverified / Incomplete:</strong> Flagged explicitly as requiring verbal confirmation before ordering.</li>
+            </ul>
+
+            <h2 style="font-size: 1.4rem; margin-bottom: 1rem;">2. Absence of Evidence vs. Evidence of Absence</h2>
+            <p style="color: var(--color-text-main); margin-bottom: 1.5rem; line-height: 1.6;">
+                The absence of a recorded allergen relationship in AllerGraph does <strong>not</strong> mean a dish is certified allergen-free. AllerGraph does not automatically create <code>SAFE_FOR</code> assertions merely because an allergen was not found in the stored data.
+            </p>
+
+            <h2 style="font-size: 1.4rem; margin-bottom: 1rem;">3. Privacy Policy & Account Data</h2>
+            <p style="color: var(--color-text-main); margin-bottom: 1rem; line-height: 1.6;">
+                We respect your personal privacy. When you register an account, we securely store:
+            </p>
+            <ul style="padding-left: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.4rem; color: var(--color-text-main);">
+                <li>Your full name and email address.</li>
+                <li>Argon2 one-way cryptographically hashed passwords. Plaintext passwords are never recorded or logged.</li>
+                <li>Timestamps of account creation and profile updates.</li>
+            </ul>
+            <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+                We do not sell, rent, or monetize personal user data or screening queries to third-party advertisers.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

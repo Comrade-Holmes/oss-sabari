@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}User Management — AllerGraph Admin{% endblock %}
+{% block breadcrumb %}<span class="current">User Management</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Account & Access Control</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+            Manage platform users, assign role-based permissions (ADMIN, EDITOR, VIEWER), and manage account statuses
+        </p>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+    <form action="/users" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label class="form-label">Search Users</label>
+            <input type="text" name="search" class="form-control" placeholder="Search by name or email address..." value="{{ search or '' }}">
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label class="form-label">Role</label>
+            <select name="role" class="form-control">
+                <option value="">All Roles</option>
+                <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>ADMIN</option>
+                <option value="EDITOR" {% if selected_role == 'EDITOR' %}selected{% endif %}>EDITOR</option>
+                <option value="VIEWER" {% if selected_role == 'VIEWER' %}selected{% endif %}>VIEWER</option>
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label class="form-label">Account Status</label>
+            <select name="status" class="form-control">
+                <option value="">All Statuses</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-secondary">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                <span>Filter</span>
+            </button>
+            <a href="/users" class="btn btn-secondary" title="Reset Filters"><i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email Address</th>
+                    <th>Current Role</th>
+                    <th>Account Status</th>
+                    <th>Created</th>
+                    <th>Actions & Permissions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if users %}
+                    {% for u in users %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div class="user-avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                        {{ (u.full_name or 'U')[0] | upper }}
+                                    </div>
+                                    <strong style="color: var(--color-deep);">{{ u.full_name }}</strong>
+                                </div>
+                            </td>
+                            <td>{{ u.email }}</td>
+                            <td>
+                                <span class="badge {% if (u.role or '') | upper == 'ADMIN' %}badge-green{% elif (u.role or '') | upper == 'EDITOR' %}badge-blue{% else %}badge-gray{% endif %}">
+                                    {{ (u.role or 'VIEWER') | upper }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if u.is_active is not false %}
+                                    <span class="badge badge-green">Active</span>
+                                {% else %}
+                                    <span class="badge badge-red">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td style="color: var(--color-text-muted); font-size: 0.8rem;">
+                                {{ u.created_at[:10] if u.created_at else 'Unknown' }}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <!-- Role Change Form -->
+                                    <form action="/users/{{ u.id }}/role" method="POST" style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <select name="role" class="form-control" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; width: 100px;">
+                                            <option value="VIEWER" {% if (u.role or '') | upper == 'VIEWER' %}selected{% endif %}>VIEWER</option>
+                                            <option value="EDITOR" {% if (u.role or '') | upper == 'EDITOR' %}selected{% endif %}>EDITOR</option>
+                                            <option value="ADMIN" {% if (u.role or '') | upper == 'ADMIN' %}selected{% endif %}>ADMIN</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.55rem;">
+                                            Update
+                                        </button>
+                                    </form>
+
+                                    <!-- Status Toggle Form -->
+                                    <form action="/users/{{ u.id }}/status" method="POST" style="display: inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                        <input type="hidden" name="is_active" value="{{ 'false' if (u.is_active is not false) else 'true' }}">
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.55rem;" data-confirm="Are you sure you want to {% if u.is_active is not false %}deactivate{% else %}activate{% endif %} user {{ u.full_name }}?">
+                                            {% if u.is_active is not false %}Deactivate{% else %}Activate{% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 3rem;">No users match your criteria.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_pages > 1 %}
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total users)
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&search={{ search or '' }}&role={{ selected_role or '' }}&status={{ selected_status or '' }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&search={{ search or '' }}&role={{ selected_role or '' }}&status={{ selected_status or '' }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

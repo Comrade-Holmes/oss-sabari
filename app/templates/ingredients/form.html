@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit {{ ingredient.name }}{% else %}New Ingredient{% endif %} — AllerGraph{% endblock %}
+{% block breadcrumb %}
+    <a href="/ingredients">Ingredients</a>
+    <span>/</span>
+    <span class="current">{% if is_edit %}Edit Ingredient{% else %}Create Ingredient{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 760px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.85rem;">{% if is_edit %}Edit Ingredient & Verification{% else %}Register New Ingredient Node{% endif %}</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Catalog raw food items, assign verification tier, and connect to known allergens</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 2.25rem;">
+            {% if error %}
+                <div style="background-color: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.3); color: var(--color-danger); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.5rem;">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form action="{% if is_edit %}/ingredients/{{ ingredient.id }}/edit{% else %}/ingredients/new{% endif %}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="form-group">
+                    <label class="form-label">Ingredient Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Parmigiano-Reggiano DOP" value="{{ ingredient.name if ingredient else '' }}" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description & Sourcing Details</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Aged hard cow's milk cheese, DOP certified from Parma...">{{ ingredient.description if ingredient else '' }}</textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" class="form-control" placeholder="e.g. Dairy, Grains, Produce, Nuts" value="{{ ingredient.category if ingredient else 'General' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Verification Status</label>
+                        <select name="verification_status" class="form-control">
+                            <option value="VERIFIED" {% if ingredient and ingredient.verification_status == 'VERIFIED' %}selected{% endif %}>VERIFIED (Spec sheet or lab test confirmed)</option>
+                            <option value="IN_REVIEW" {% if ingredient and ingredient.verification_status == 'IN_REVIEW' %}selected{% endif %}>IN_REVIEW (Pending supplier declaration)</option>
+                            <option value="UNVERIFIED" {% if not ingredient or ingredient.verification_status == 'UNVERIFIED' %}selected{% endif %}>UNVERIFIED (Unverified baseline record)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Source Reference / Certificate Audit</label>
+                    <input type="text" name="source_reference" class="form-control" placeholder="e.g. Consorzio DOP Lab Certificate #892" value="{{ ingredient.source_reference if ingredient else '' }}">
+                    <div class="form-text">Document lab reports, supplier spec sheets, or producer allergen audit statements.</div>
+                </div>
+
+                <!-- Allergen Links -->
+                <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border);">
+                    <label class="form-label" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; color: var(--color-danger);">
+                        <i data-lucide="alert-triangle" style="width: 16px; height: 16px;"></i>
+                        <span>Contains Allergens (CONTAINS_ALLERGEN relationship)</span>
+                    </label>
+                    <p class="form-text" style="margin-bottom: 0.6rem;">Check any allergens that this ingredient inherently contains.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.6rem; border: 1px solid var(--color-border); padding: 0.85rem; border-radius: 8px; background: var(--color-cream);">
+                        {% for a in all_allergens %}
+                            <label class="form-check">
+                                <input type="checkbox" name="allergen_ids" value="{{ a.id }}" {% if a.id in selected_allergen_ids %}checked{% endif %}>
+                                <span style="font-size: 0.85rem; font-weight: 500;">{{ a.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; border-top: 1px solid var(--color-border); padding-top: 1.25rem;">
+                    <a href="{% if is_edit %}/ingredients/{{ ingredient.id }}{% else %}/ingredients{% endif %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>{% if is_edit %}Save Changes{% else %}Create Ingredient{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

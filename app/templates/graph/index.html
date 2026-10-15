@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Ingredient Graph Explorer — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Graph Explorer</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Knowledge Graph Explorer</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+            Explore real Neo4j graph nodes and directional relationships across restaurants, recipes, ingredients, and allergen targets
+        </p>
+    </div>
+
+    <!-- Quick Path Tracer -->
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <button id="btn-trace-paths" class="btn btn-primary btn-sm">
+            <i data-lucide="git-merge" style="width: 14px; height: 14px;"></i>
+            <span>Highlight Allergen Paths</span>
+        </button>
+        <button id="btn-reset-graph" class="btn btn-secondary btn-sm" title="Reset View">
+            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+            <span>Reset Layout</span>
+        </button>
+    </div>
+</div>
+
+<!-- Graph Toolbar & Filter Bar -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+    <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center;">
+        <!-- Entity Search Box -->
+        <div style="flex: 2; min-width: 220px; display: flex; gap: 0.5rem;">
+            <input type="text" id="graph-search" class="form-control" placeholder="Search any node (e.g. Salmon, Risotto, Peanuts)..." value="{{ initial_search or '' }}">
+            <button id="btn-search-graph" class="btn btn-secondary">
+                <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+
+        <!-- Node Type Filters -->
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase;">Types:</span>
+            <label class="form-check" style="font-size: 0.85rem;">
+                <input type="checkbox" id="filter-restaurant" checked>
+                <span style="color: #245C46; font-weight: 600;">Restaurants</span>
+            </label>
+            <label class="form-check" style="font-size: 0.85rem;">
+                <input type="checkbox" id="filter-dish" checked>
+                <span style="color: #DD6B20; font-weight: 600;">Dishes</span>
+            </label>
+            <label class="form-check" style="font-size: 0.85rem;">
+                <input type="checkbox" id="filter-ingredient" checked>
+                <span style="color: #3182CE; font-weight: 600;">Ingredients</span>
+            </label>
+            <label class="form-check" style="font-size: 0.85rem;">
+                <input type="checkbox" id="filter-allergen" checked>
+                <span style="color: #C74747; font-weight: 600;">Allergens</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<!-- Main Explorer Canvas Area with Inspection Sidebar -->
+<div style="display: grid; grid-template-columns: 3fr 1fr; gap: 1.5rem;">
+    <!-- Canvas Container -->
+    <div class="card" style="position: relative; overflow: hidden; min-height: 640px;">
+        <div id="cy" style="width: 100%; height: 640px; background-color: #FAFBF9;"></div>
+
+        <!-- Legend -->
+        <div class="graph-legend">
+            <div class="legend-item"><span class="legend-dot" style="background-color: #245C46;"></span><span>Restaurant</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #DD6B20;"></span><span>Dish</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #3182CE;"></span><span>Ingredient</span></div>
+            <div class="legend-item"><span class="legend-dot" style="background-color: #C74747;"></span><span>Allergen</span></div>
+        </div>
+
+        <!-- Controls (Zoom, Pan, Fit) -->
+        <div class="graph-controls">
+            <button id="btn-zoom-in" class="btn btn-secondary btn-sm" title="Zoom In" style="padding: 0.4rem 0.6rem;">
+                <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button id="btn-zoom-out" class="btn btn-secondary btn-sm" title="Zoom Out" style="padding: 0.4rem 0.6rem;">
+                <i data-lucide="minus" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button id="btn-fit" class="btn btn-secondary btn-sm" title="Fit to Screen" style="padding: 0.4rem 0.6rem;">
+                <i data-lucide="maximize" style="width: 16px; height: 16px;"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Node Inspection Sidebar -->
+    <div class="card" id="inspector-card">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i data-lucide="info" style="width: 18px; height: 18px;"></i>
+                <span>Node Inspector</span>
+            </h3>
+        </div>
+        <div class="card-body" id="inspector-body" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div style="text-align: center; color: var(--color-text-muted); padding: 3rem 1rem;">
+                <i data-lucide="mouse-pointer-click" style="width: 32px; height: 32px; margin-bottom: 0.75rem; opacity: 0.4;"></i>
+                <p style="font-size: 0.9rem;">Click any node in the graph to inspect its details, attributes, and relationships.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<script>
+let cy = null;
+const userRole = "{{ current_user.role or 'VIEWER' }}";
+
+function initGraph(data) {
+    const elements = [
+        ...data.nodes.map(n => ({ data: n.data })),
+        ...data.edges.map(e => ({ data: e.data }))
+    ];
+
+    cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: elements,
+        style: [
+            {
+                selector: 'node',
+                style: {
+                    'label': 'data(label)',
+                    'background-color': 'data(color)',
+                    'color': '#202A24',
+                    'font-family': 'Inter, sans-serif',
+                    'font-size': '12px',
+                    'font-weight': '600',
+                    'text-valign': 'bottom',
+                    'text-margin-y': 6,
+                    'text-background-opacity': 0.85,
+                    'text-background-color': '#FFFFFF',
+                    'text-background-padding': '2px',
+                    'text-background-shape': 'roundrectangle',
+                    'width': 34,
+                    'height': 34,
+                    'border-width': 2,
+                    'border-color': '#FFFFFF',
+                    'shadow-blur': 6,
+                    'shadow-color': 'rgba(0,0,0,0.15)',
+                    'shadow-opacity': 0.3
+                }
+            },
+            {
+                selector: 'node:selected',
+                style: {
+                    'border-color': '#202A24',
+                    'border-width': 4,
+                    'width': 40,
+                    'height': 40
+                }
+            },
+            {
+                selector: 'edge',
+                style: {
+                    'width': 2,
+                    'line-color': '#CBD5E0',
+                    'target-arrow-color': '#A0AEC0',
+                    'target-arrow-shape': 'triangle',
+                    'curve-style': 'bezier',
+                    'label': 'data(label)',
+                    'font-size': '9px',
+                    'font-family': 'Inter, sans-serif',
+                    'text-rotation': 'autorotate',
+                    'text-margin-y': -8,
+                    'color': '#718096'
+                }
+            },
+            {
+                selector: 'edge[label = "CONTAINS_ALLERGEN"]',
+                style: {
+                    'line-color': '#FCA5A5',
+                    'target-arrow-color': '#EF4444',
+                    'width': 2.5
+                }
+            },
+            {
+                selector: 'edge[label = "MAY_CONTAIN"]',
+                style: {
+                    'line-color': '#FCD34D',
+                    'target-arrow-color': '#F59E0B',
+                    'line-style': 'dashed',
+                    'width': 2.5
+                }
+            },
+            {
+                selector: '.highlighted',
+                style: {
+                    'line-color': '#C74747',
+                    'target-arrow-color': '#C74747',
+                    'width': 4
+                }
+            }
+        ],
+        layout: {
+            name: 'cose',
+            animate: false,
+            nodeRepulsion: 750000,
+            idealEdgeLength: 100,
+            edgeElasticity: 100
+        }
+    });
+
+    // Node click handler -> Populate Inspector Sidebar
+    cy.on('tap', 'node', function(evt) {
+        const node = evt.target;
+        const d = node.data();
+        const p = d.properties || {};
+        
+        let urlPath = '';
+        if (d.type === 'Restaurant') urlPath = `/restaurants/${d.id}`;
+        else if (d.type === 'Dish') urlPath = `/dishes/${d.id}`;
+        else if (d.type === 'Ingredient') urlPath = `/ingredients/${d.id}`;
+        else if (d.type === 'Allergen') urlPath = `/allergens/${d.id}`;
+
+        let html = `
+            <div style="border-bottom: 1px solid var(--color-border); padding-bottom: 1rem;">
+                <span class="badge" style="background-color: ${d.color}; color: #FFFFFF; font-size: 0.7rem; margin-bottom: 0.4rem;">
+                    ${d.type}
+                </span>
+                <h3 style="font-size: 1.25rem; color: var(--color-deep); line-height: 1.2;">${d.label}</h3>
+            </div>
+            
+            <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.6rem;">
+        `;
+
+        if (p.description) {
+            html += `<p style="color: var(--color-text-main); font-size: 0.85rem; line-height: 1.4;">${p.description}</p>`;
+        }
+        if (p.city) {
+            html += `<div><strong>City:</strong> ${p.city}</div>`;
+        }
+        if (p.category) {
+            html += `<div><strong>Category:</strong> ${p.category}</div>`;
+        }
+        if (p.price) {
+            html += `<div><strong>Price:</strong> $${parseFloat(p.price).toFixed(2)}</div>`;
+        }
+        if (p.verification_status) {
+            html += `<div><strong>Verification:</strong> <span class="badge badge-green">${p.verification_status}</span></div>`;
+        }
+        if (p.source_reference) {
+            html += `<div><strong>Source:</strong> ${p.source_reference}</div>`;
+        }
+
+        html += `
+            </div>
+            
+            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <button class="btn btn-secondary btn-sm" onclick="expandNode('${d.id}')">
+                    <i data-lucide="maximize-2" style="width: 14px; height: 14px;"></i>
+                    <span>Expand Connected Neighbors</span>
+                </button>
+                <a href="${urlPath}" class="btn btn-primary btn-sm">
+                    <i data-lucide="external-link" style="width: 14px; height: 14px;"></i>
+                    <span>Open Entity Details Page</span>
+                </a>
+        `;
+
+        if (['ADMIN', 'EDITOR'].includes(userRole.toUpperCase())) {
+            html += `
+                <a href="${urlPath}/edit" class="btn btn-secondary btn-sm">
+                    <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                    <span>Edit in Platform</span>
+                </a>
+            `;
+        }
+
+        html += `</div>`;
+
+        document.getElementById('inspector-body').innerHTML = html;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+}
+
+function fetchGraph(search = '', types = []) {
+    let url = `/api/graph/data?limit=120`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    if (types.length > 0) url += `&node_types=${encodeURIComponent(types.join(','))}`;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            initGraph(data);
+        })
+        .catch(err => console.error("Error loading graph:", err));
+}
+
+function expandNode(nodeId) {
+    fetch(`/api/graph/expand/${nodeId}`)
+        .then(r => r.json())
+        .then(data => {
+            if (cy) {
+                const newElements = [
+                    ...data.nodes.map(n => ({ data: n.data })),
+                    ...data.edges.map(e => ({ data: e.data }))
+                ];
+                cy.add(newElements);
+                cy.layout({ name: 'cose', animate: true }).run();
+                showToast(`Expanded neighbors for selected node.`);
+            }
+        });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const initialSearch = document.getElementById('graph-search').value.trim();
+    fetchGraph(initialSearch);
+
+    // Zoom and pan controls
+    document.getElementById('btn-zoom-in').addEventListener('click', () => {
+        if (cy) cy.zoom(cy.zoom() * 1.25);
+    });
+    document.getElementById('btn-zoom-out').addEventListener('click', () => {
+        if (cy) cy.zoom(cy.zoom() * 0.8);
+    });
+    document.getElementById('btn-fit').addEventListener('click', () => {
+        if (cy) cy.fit(null, 30);
+    });
+    document.getElementById('btn-reset-graph').addEventListener('click', () => {
+        fetchGraph();
+    });
+
+    // Search and filter triggers
+    document.getElementById('btn-search-graph').addEventListener('click', () => {
+        const q = document.getElementById('graph-search').value.trim();
+        fetchGraph(q, getSelectedTypes());
+    });
+
+    document.getElementById('graph-search').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const q = document.getElementById('graph-search').value.trim();
+            fetchGraph(q, getSelectedTypes());
+        }
+    });
+
+    ['filter-restaurant', 'filter-dish', 'filter-ingredient', 'filter-allergen'].forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            const q = document.getElementById('graph-search').value.trim();
+            fetchGraph(q, getSelectedTypes());
+        });
+    });
+
+    // Highlight paths to allergens
+    document.getElementById('btn-trace-paths').addEventListener('click', () => {
+        fetch('/api/graph/paths')
+            .then(r => r.json())
+            .then(data => {
+                initGraph(data);
+                if (cy) {
+                    cy.edges().addClass('highlighted');
+                }
+                showToast(`Highlighted active paths from restaurants to allergens!`);
+            });
+    });
+
+    function getSelectedTypes() {
+        const t = [];
+        if (document.getElementById('filter-restaurant').checked) t.push('Restaurant');
+        if (document.getElementById('filter-dish').checked) t.push('Dish');
+        if (document.getElementById('filter-ingredient').checked) t.push('Ingredient');
+        if (document.getElementById('filter-allergen').checked) t.push('Allergen');
+        return t;
+    }
+});
+</script>
+{% endblock %}

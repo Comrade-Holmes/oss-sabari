@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Restaurants — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Restaurants</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Partner Restaurants</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Browse dining establishments, view menu offerings, and inspect culinary profiles</p>
+    </div>
+    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+        <a href="/restaurants/new" class="btn btn-primary">
+            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
+            <span>Add Restaurant</span>
+        </a>
+    {% endif %}
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+    <form action="/restaurants" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Search by name, city, or cuisine..." value="{{ search or '' }}">
+        </div>
+
+        <div style="flex: 1; min-width: 160px;">
+            <label class="form-label">City</label>
+            <select name="city" class="form-control">
+                <option value="">All Cities</option>
+                {% for c in cities %}
+                    <option value="{{ c }}" {% if selected_city == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 160px;">
+            <label class="form-label">Cuisine</label>
+            <select name="cuisine" class="form-control">
+                <option value="">All Cuisines</option>
+                {% for cs in cuisines %}
+                    <option value="{{ cs }}" {% if selected_cuisine == cs %}selected{% endif %}>{{ cs }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-secondary">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                <span>Filter</span>
+            </button>
+            <a href="/restaurants" class="btn btn-secondary" title="Reset Filters"><i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Restaurants Table / Cards -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Restaurant</th>
+                    <th>City & Address</th>
+                    <th>Cuisine</th>
+                    <th>Status</th>
+                    <th>Dishes Offered</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if restaurants %}
+                    {% for r in restaurants %}
+                        <tr>
+                            <td>
+                                <a href="/restaurants/{{ r.id }}" style="font-weight: 600; font-size: 0.95rem; color: var(--color-deep);">
+                                    {{ r.name }}
+                                </a>
+                                {% if r.description %}
+                                    <div style="font-size: 0.8rem; color: var(--color-text-muted); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ r.description }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>{{ r.city }}</div>
+                                <div style="font-size: 0.775rem; color: var(--color-text-muted);">{{ r.address }}</div>
+                            </td>
+                            <td><span class="badge badge-gray">{{ r.cuisine_type }}</span></td>
+                            <td>
+                                <span class="badge {% if r.status == 'ACTIVE' %}badge-green{% else %}badge-red{% endif %}">
+                                    {{ r.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/dishes?restaurant={{ r.id }}" class="badge badge-blue" style="cursor: pointer;">
+                                    {{ r.dish_count }} Dishes &rarr;
+                                </a>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a href="/restaurants/{{ r.id }}" class="btn btn-secondary btn-sm" title="View Details">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                    </a>
+                                    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                                        <a href="/restaurants/{{ r.id }}/edit" class="btn btn-secondary btn-sm" title="Edit Restaurant">
+                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if current_user.role == 'ADMIN' %}
+                                        <form action="/restaurants/{{ r.id }}/delete" method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger);" data-confirm="Are you sure you want to delete '{{ r.name }}'? This will remove restaurant connections without deleting dishes." title="Delete Restaurant">
+                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 3rem;">
+                            <i data-lucide="store" style="width: 36px; height: 36px; margin-bottom: 0.75rem; opacity: 0.4;"></i>
+                            <div>No restaurants match your search criteria.</div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total restaurants)
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&search={{ search or '' }}&city={{ selected_city or '' }}&cuisine={{ selected_cuisine or '' }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&search={{ search or '' }}&city={{ selected_city or '' }}&cuisine={{ selected_cuisine or '' }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

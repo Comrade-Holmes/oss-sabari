@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}My Dietary Dashboard — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">My Dashboard</span>{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 style="font-size: 1.85rem;">Welcome back, {{ current_user.full_name }}</h1>
+    <p style="color: var(--color-text-muted); font-size: 0.95rem;">Explore partner restaurant menus, analyze recipes, and screen for allergens</p>
+</div>
+
+<!-- Prominent Food Safety Disclaimer Banner -->
+<div class="disclaimer-banner">
+    <i data-lucide="shield-alert" class="disclaimer-banner-icon"></i>
+    <div>
+        <strong>Informational Screening Notice:</strong> AllerGraph helps you identify potential allergen relationships across restaurant menus, but cannot replace verbal confirmation with kitchen staff. Always inform your server of severe dietary restrictions and anaphylactic allergies.
+    </div>
+</div>
+
+<!-- Quick Screening Tool Widget -->
+<div class="card" style="margin-bottom: 2.5rem; background: linear-gradient(135deg, #FFFFFF 0%, var(--color-sage-light) 100%);">
+    <div class="card-body" style="padding: 2rem;">
+        <h2 style="font-size: 1.35rem; color: var(--color-deep); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="search-check" style="color: var(--color-forest);"></i>
+            <span>Quick Allergy Screening</span>
+        </h2>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Select allergens you need to avoid to screen active dishes across all partner restaurants.
+        </p>
+
+        <form action="/allergy-checker" method="GET">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem;">
+                {% for a in allergens %}
+                    <label class="form-check" style="background: var(--color-white); padding: 0.6rem 0.85rem; border-radius: 8px; border: 1px solid var(--color-border);">
+                        <input type="checkbox" name="allergens" value="{{ a.id }}">
+                        <span style="font-size: 0.85rem; font-weight: 500;">{{ a.name }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <label class="form-check">
+                        <input type="radio" name="match_mode" value="ANY" checked>
+                        <span>Match <strong>ANY</strong> Selected (Strict Alert)</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="radio" name="match_mode" value="ALL">
+                        <span>Match <strong>ALL</strong> Selected</span>
+                    </label>
+                </div>
+
+                <div style="margin-left: auto;">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="search" style="width: 16px; height: 16px;"></i>
+                        <span>Screen Menus Now</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Discovery Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-bottom: 2rem;">
+    <!-- Featured Restaurants -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="store" style="width: 18px; height: 18px;"></i><span>Partner Restaurants</span></h3>
+            <a href="/restaurants" class="btn btn-secondary btn-sm">Explore All</a>
+        </div>
+        <div class="card-body" style="padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 0.85rem;">
+            {% for r in restaurants %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border);">
+                    <div>
+                        <a href="/restaurants/{{ r.id }}" style="font-weight: 600; font-size: 0.95rem; color: var(--color-deep);">{{ r.name }}</a>
+                        <div style="font-size: 0.8rem; color: var(--color-text-muted);">{{ r.cuisine_type }} &bull; {{ r.city }}</div>
+                    </div>
+                    <span class="badge badge-green">{{ r.dish_count }} Dishes</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Quick Shortcuts & Explorer Links -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="compass" style="width: 18px; height: 18px;"></i><span>Dietary Discovery Tools</span></h3>
+        </div>
+        <div class="card-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <a href="/graph" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 10px; border: 1px solid var(--color-border); background-color: var(--color-cream); text-decoration: none;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background-color: var(--color-forest); color: var(--color-white); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="network" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <strong style="display: block; color: var(--color-deep); font-size: 0.95rem;">Interactive Knowledge Graph</strong>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">Visualize paths between restaurants, dishes, and allergen triggers.</span>
+                </div>
+            </a>
+
+            <a href="/dishes" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; border-radius: 10px; border: 1px solid var(--color-border); background-color: var(--color-cream); text-decoration: none;">
+                <div style="width: 44px; height: 44px; border-radius: 10px; background-color: #DD6B20; color: var(--color-white); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i data-lucide="utensils" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div>
+                    <strong style="display: block; color: var(--color-deep); font-size: 0.95rem;">Browse Complete Menus</strong>
+                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">Search vegetarian, vegan, and verified ingredient dishes.</span>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Ingredients — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Ingredients</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Ingredient Knowledge Base</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Catalog of verified raw ingredients, supplier references, and allergen linkages</p>
+    </div>
+    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+        <a href="/ingredients/new" class="btn btn-primary">
+            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
+            <span>Add Ingredient</span>
+        </a>
+    {% endif %}
+</div>
+
+<!-- Search & Filters -->
+<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+    <form action="/ingredients" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Search ingredient name, source..." value="{{ search or '' }}">
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label class="form-label">Category</label>
+            <select name="category" class="form-control">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label class="form-label">Verification Status</label>
+            <select name="verification" class="form-control">
+                <option value="">All Statuses</option>
+                <option value="VERIFIED" {% if selected_verification == 'VERIFIED' %}selected{% endif %}>Verified</option>
+                <option value="IN_REVIEW" {% if selected_verification == 'IN_REVIEW' %}selected{% endif %}>In Review</option>
+                <option value="UNVERIFIED" {% if selected_verification == 'UNVERIFIED' %}selected{% endif %}>Unverified</option>
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 150px;">
+            <label class="form-label">Contains Allergen</label>
+            <select name="allergen" class="form-control">
+                <option value="">Any Allergen</option>
+                {% for a in allergens %}
+                    <option value="{{ a.id }}" {% if selected_allergen == a.id %}selected{% endif %}>{{ a.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-secondary">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                <span>Filter</span>
+            </button>
+            <a href="/ingredients" class="btn btn-secondary" title="Reset Filters"><i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Ingredients Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ingredient</th>
+                    <th>Category</th>
+                    <th>Verification Status</th>
+                    <th>Source Reference</th>
+                    <th>Contained Allergens</th>
+                    <th>Used in Dishes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if ingredients %}
+                    {% for ing in ingredients %}
+                        <tr>
+                            <td>
+                                <a href="/ingredients/{{ ing.id }}" style="font-weight: 600; font-size: 0.95rem; color: var(--color-deep);">
+                                    {{ ing.name }}
+                                </a>
+                                {% if ing.description %}
+                                    <div style="font-size: 0.8rem; color: var(--color-text-muted); max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ ing.description }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge badge-gray">{{ ing.category }}</span></td>
+                            <td>
+                                <span class="badge {% if ing.verification_status == 'VERIFIED' %}badge-green{% elif ing.verification_status == 'IN_REVIEW' %}badge-amber{% else %}badge-red{% endif %}">
+                                    {{ ing.verification_status }}
+                                </span>
+                            </td>
+                            <td style="color: var(--color-text-muted); font-size: 0.825rem; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ ing.source_reference or 'Pending supplier spec' }}
+                            </td>
+                            <td>
+                                {% if ing.allergens %}
+                                    <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                                        {% for a in ing.allergens %}
+                                            <a href="/allergens/{{ a.id }}" class="badge badge-red" style="font-size: 0.7rem;">{{ a.name }}</a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span style="color: var(--color-text-muted); font-size: 0.8rem;">None linked</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/dishes?ingredient={{ ing.id }}" class="badge badge-blue">
+                                    {{ ing.dish_count }} dishes &rarr;
+                                </a>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.4rem;">
+                                    <a href="/ingredients/{{ ing.id }}" class="btn btn-secondary btn-sm" title="View Details">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                    </a>
+                                    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                                        <a href="/ingredients/{{ ing.id }}/edit" class="btn btn-secondary btn-sm" title="Edit Ingredient">
+                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if current_user.role == 'ADMIN' %}
+                                        <form action="/ingredients/{{ ing.id }}/delete" method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger);" data-confirm="Delete ingredient '{{ ing.name }}'? This safely removes associations to dishes and allergens." title="Delete Ingredient">
+                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--color-text-muted); padding: 3rem;">
+                            <i data-lucide="leaf" style="width: 36px; height: 36px; margin-bottom: 0.75rem; opacity: 0.4;"></i>
+                            <div>No ingredients found matching your search.</div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total ingredients)
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&search={{ search or '' }}&category={{ selected_category or '' }}&verification={{ selected_verification or '' }}&allergen={{ selected_allergen or '' }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&search={{ search or '' }}&category={{ selected_category or '' }}&verification={{ selected_verification or '' }}&allergen={{ selected_allergen or '' }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

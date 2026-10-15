@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — AllerGraph{% endblock %}
+
+{% block public_content %}
+<div style="min-height: calc(100vh - 72px - 250px); display: flex; align-items: center; justify-content: center; padding: 3rem 1.5rem;">
+    <div class="card" style="width: 100%; max-width: 440px; box-shadow: var(--shadow-lg);">
+        <div class="card-header" style="text-align: center; display: block; padding: 2rem 1.5rem 1.25rem;">
+            <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 42px; height: 42px;">
+                <i data-lucide="shield-check" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h2 style="font-size: 1.5rem; color: var(--color-deep);">Sign In to AllerGraph</h2>
+            <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.25rem;">Access graph intelligence and dietary screening</p>
+        </div>
+
+        <div class="card-body" style="padding: 1.75rem 2rem 2rem;">
+            {% if error %}
+                <div style="background-color: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.3); color: var(--color-danger); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="alert-circle" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                    <span>{{ error }}</span>
+                </div>
+            {% endif %}
+
+            <form action="/login" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="next" value="{{ next_url or '' }}">
+
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="name@example.com" value="{{ email or '' }}" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                        <label class="form-label" style="margin-bottom: 0;">Password</label>
+                        <a href="/forgot-password" style="font-size: 0.8rem; font-weight: 500;">Forgot password?</a>
+                    </div>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; margin-top: 0.5rem;">
+                    <i data-lucide="log-in" style="width: 18px; height: 18px;"></i>
+                    <span>Sign In</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="card-footer" style="text-align: center; font-size: 0.875rem; color: var(--color-text-muted);">
+            Don't have an account yet? <a href="/register" style="font-weight: 600;">Create an account</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

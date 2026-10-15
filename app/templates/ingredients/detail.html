@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ingredient.name }} — Ingredient Intelligence{% endblock %}
+{% block breadcrumb %}
+    <a href="/ingredients">Ingredients</a>
+    <span>/</span>
+    <span class="current">{{ ingredient.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+            <h1 style="font-size: 2.1rem;">{{ ingredient.name }}</h1>
+            <span class="badge badge-gray">{{ ingredient.category }}</span>
+            <span class="badge {% if ingredient.verification_status == 'VERIFIED' %}badge-green{% elif ingredient.verification_status == 'IN_REVIEW' %}badge-amber{% else %}badge-red{% endif %}">
+                {{ ingredient.verification_status }}
+            </span>
+        </div>
+        <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+            Source Spec: {{ ingredient.source_reference or 'Pending supplier documentation' }}
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+        {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+            <a href="/ingredients/{{ ingredient.id }}/edit" class="btn btn-secondary">
+                <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                <span>Edit Verification</span>
+            </a>
+        {% endif %}
+        <a href="/graph?search={{ ingredient.name }}" class="btn btn-outline-forest">
+            <i data-lucide="network" style="width: 16px; height: 16px;"></i>
+            <span>Inspect in Graph</span>
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <div>
+        <!-- Profile Description -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="info" style="width: 18px; height: 18px;"></i><span>Ingredient Specification</span></h3>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--color-text-main); font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;">
+                    {{ ingredient.description or 'No expanded description on file.' }}
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.875rem;">
+                    <div>
+                        <strong style="color: var(--color-text-muted); display: block; font-size: 0.775rem; text-transform: uppercase;">Verification Audit</strong>
+                        <div>{{ ingredient.verification_status }}</div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--color-text-muted); display: block; font-size: 0.775rem; text-transform: uppercase;">Last Verified Date</strong>
+                        <div>{{ ingredient.last_verified_at[:10] if ingredient.last_verified_at else 'Unverified' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connected Dishes & Restaurants -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="utensils" style="width: 18px; height: 18px;"></i><span>Used in Menu Dishes ({{ ingredient.dishes | length }})</span></h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Dish Name</th>
+                            <th>Category</th>
+                            <th>Offered At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ingredient.dishes %}
+                            {% for d in ingredient.dishes %}
+                                <tr>
+                                    <td>
+                                        <a href="/dishes/{{ d.id }}" style="font-weight: 600; color: var(--color-deep);">
+                                            {{ d.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ d.category }}</td>
+                                    <td>
+                                        {% for r in ingredient.restaurants %}
+                                            <a href="/restaurants/{{ r.id }}" style="font-size: 0.85rem;">{{ r.name }}</a>{% if not loop.last %}, {% endif %}
+                                        {% else %}
+                                            <span style="color: var(--color-text-muted); font-size: 0.8rem;">Various</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        <a href="/dishes/{{ d.id }}" class="btn btn-secondary btn-sm">Inspect</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--color-text-muted); padding: 2rem;">This ingredient is not currently attached to any active menu dishes.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Allergens Contained in this Ingredient -->
+    <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: var(--color-danger);"></i><span>Linked Allergens</span></h3>
+            </div>
+            <div class="card-body">
+                {% if ingredient.allergens %}
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+                        This raw ingredient has recorded associations with the following allergen categories:
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                        {% for a in ingredient.allergens %}
+                            <a href="/allergens/{{ a.id }}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.85rem; border-radius: 8px; background: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.2); text-decoration: none;">
+                                <strong style="color: var(--color-danger); font-size: 0.9rem;">{{ a.name }}</strong>
+                                <span class="badge badge-red" style="font-size: 0.65rem;">{{ a.allergen_category }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; color: var(--color-forest); padding: 1.5rem;">
+                        <i data-lucide="shield-check" style="width: 32px; height: 32px; margin-bottom: 0.4rem;"></i>
+                        <div style="font-weight: 600; font-size: 0.9rem;">No Allergen Associations</div>
+                        <p style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.25rem;">No primary allergen links recorded in knowledge base.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="database" style="width: 18px; height: 18px;"></i><span>Graph Node Info</span></h3>
+            </div>
+            <div class="card-body" style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                <div>
+                    <span style="color: var(--color-text-muted);">Node ID:</span>
+                    <code style="font-size: 0.75rem; word-break: break-all;">{{ ingredient.id }}</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

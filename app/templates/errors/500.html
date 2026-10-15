@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Server Error — AllerGraph{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 5rem 1.5rem; max-width: 600px; margin: 0 auto;">
+    <div style="font-size: 5rem; font-family: var(--font-heading); font-weight: 800; color: var(--color-danger); line-height: 1;">500</div>
+    <h2 style="font-size: 1.75rem; margin: 1rem 0 0.5rem; color: var(--color-deep);">Internal Application Error</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+        An unexpected error occurred while executing this graph operation. Our security audit system has logged this incident.
+    </p>
+    <a href="/dashboard" class="btn btn-primary btn-lg">Return to Safe Dashboard</a>
+</div>
+{% endblock %}
+
+{% block public_content %}
+<div style="text-align: center; padding: 5rem 1.5rem; max-width: 600px; margin: 0 auto;">
+    <div style="font-size: 5rem; font-family: var(--font-heading); font-weight: 800; color: var(--color-danger); line-height: 1;">500</div>
+    <h2 style="font-size: 1.75rem; margin: 1rem 0 0.5rem; color: var(--color-deep);">Server Error</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+        An unexpected issue occurred. Please try again shortly.
+    </p>
+    <a href="/" class="btn btn-primary btn-lg">Return to Home</a>
+</div>
+{% endblock %}

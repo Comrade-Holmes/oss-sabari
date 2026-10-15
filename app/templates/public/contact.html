@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Contact & Inquiries — AllerGraph Platform{% endblock %}
+
+{% block public_content %}
+<div style="max-width: 800px; margin: 4rem auto; padding: 0 1.5rem;">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+        <span class="badge badge-green" style="margin-bottom: 0.5rem;">Support & Inquiries</span>
+        <h1 style="font-size: 2.5rem; margin-bottom: 0.75rem;">Get in Touch With Our Team</h1>
+        <p style="color: var(--color-text-muted); font-size: 1.05rem;">
+            Have questions about partnering with your restaurant, data verification standards, or reporting a discrepancy? Send us a message.
+        </p>
+    </div>
+
+    <div class="card" style="box-shadow: var(--shadow-md);">
+        <div class="card-body" style="padding: 2.5rem;">
+            <form action="/contact" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="Jane Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="jane@example.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Inquiry Subject</label>
+                    <select name="subject" class="form-control">
+                        <option value="General Inquiry">General Question</option>
+                        <option value="Restaurant Verification Partnership">Restaurant Verification Partnership</option>
+                        <option value="Data Correction Request">Ingredient / Allergen Data Correction</option>
+                        <option value="Academic Project Review">Academic Project Review / Feedback</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea name="message" class="form-control" rows="5" placeholder="Please describe your question or inquiry in detail..." required></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+                        <span>Send Message</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

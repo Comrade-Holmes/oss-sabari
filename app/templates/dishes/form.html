@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Edit {{ dish.name }}{% else %}New Dish{% endif %} — AllerGraph{% endblock %}
+{% block breadcrumb %}
+    <a href="/dishes">Dishes</a>
+    <span>/</span>
+    <span class="current">{% if is_edit %}Edit Dish{% else %}Create Dish{% endif %}</span>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.85rem;">{% if is_edit %}Edit Dish Recipe & Linkages{% else %}Create New Dish Offering{% endif %}</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Map recipe ingredients, link to partner restaurants, and declare precautionary cross-contact</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 2.25rem;">
+            {% if error %}
+                <div style="background-color: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.3); color: var(--color-danger); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.5rem;">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <form action="{% if is_edit %}/dishes/{{ dish.id }}/edit{% else %}/dishes/new{% endif %}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="form-group">
+                    <label class="form-label">Dish Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="e.g. Creamy Wild Mushroom Risotto" value="{{ dish.name if dish else '' }}" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Culinary Description</label>
+                    <textarea name="description" class="form-control" rows="3" placeholder="Slow-simmered carnaroli rice with wild forest mushrooms...">{{ dish.description if dish else '' }}</textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <input type="text" name="category" class="form-control" placeholder="e.g. Main Course, Appetizer, Dessert" value="{{ dish.category if dish else 'Main Course' }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Menu Price ($)</label>
+                        <input type="number" step="0.01" min="0" name="price" class="form-control" placeholder="19.50" value="{{ dish.price if dish else '0.00' }}">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Availability Status</label>
+                        <select name="availability_status" class="form-control">
+                            <option value="AVAILABLE" {% if dish and dish.availability_status == 'AVAILABLE' %}selected{% endif %}>Available</option>
+                            <option value="UNAVAILABLE" {% if dish and dish.availability_status == 'UNAVAILABLE' %}selected{% endif %}>Unavailable</option>
+                            <option value="SEASONAL" {% if dish and dish.availability_status == 'SEASONAL' %}selected{% endif %}>Seasonal</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ingredient Data Status</label>
+                        <select name="ingredient_data_status" class="form-control">
+                            <option value="COMPLETE" {% if dish and dish.ingredient_data_status == 'COMPLETE' %}selected{% endif %}>Complete (All ingredients documented)</option>
+                            <option value="PARTIAL" {% if dish and dish.ingredient_data_status == 'PARTIAL' %}selected{% endif %}>Partial (Some spices/seasonings pending)</option>
+                            <option value="INCOMPLETE" {% if dish and dish.ingredient_data_status == 'INCOMPLETE' %}selected{% endif %}>Incomplete (Audit required)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                    <label class="form-check">
+                        <input type="checkbox" name="vegetarian" value="true" {% if dish and dish.vegetarian %}checked{% endif %}>
+                        <span>Vegetarian</span>
+                    </label>
+                    <label class="form-check">
+                        <input type="checkbox" name="vegan" value="true" {% if dish and dish.vegan %}checked{% endif %}>
+                        <span>Vegan</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kitchen Preparation & Cross-Contact Notes</label>
+                    <textarea name="preparation_notes" class="form-control" rows="2" placeholder="e.g. Prepared on line adjacent to walnut-crusted chicken; shared fryer note...">{{ dish.preparation_notes if dish else '' }}</textarea>
+                </div>
+
+                <!-- 1. Restaurant Links -->
+                <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border);">
+                    <label class="form-label" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="store" style="width: 16px; height: 16px;"></i>
+                        <span>Offered At Restaurants</span>
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.6rem; max-height: 180px; overflow-y: auto; border: 1px solid var(--color-border); padding: 0.85rem; border-radius: 8px; background: var(--color-cream);">
+                        {% for r in all_restaurants %}
+                            <label class="form-check">
+                                <input type="checkbox" name="restaurant_ids" value="{{ r.id }}" {% if r.id in selected_restaurant_ids %}checked{% endif %}>
+                                <span style="font-size: 0.85rem;">{{ r.name }} ({{ r.city }})</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 2. Attached Ingredients -->
+                <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border);">
+                    <label class="form-label" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i data-lucide="leaf" style="width: 16px; height: 16px;"></i>
+                        <span>Recipe Ingredients (CONTAINS relationship)</span>
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; max-height: 220px; overflow-y: auto; border: 1px solid var(--color-border); padding: 0.85rem; border-radius: 8px; background: var(--color-cream);">
+                        {% for ing in all_ingredients %}
+                            <label class="form-check">
+                                <input type="checkbox" name="ingredient_ids" value="{{ ing.id }}" {% if ing.id in selected_ingredient_ids %}checked{% endif %}>
+                                <span style="font-size: 0.85rem;">{{ ing.name }} <small style="color: var(--color-text-muted);">({{ ing.category }})</small></span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- 3. Precautionary MAY_CONTAIN Allergens -->
+                <div class="form-group" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border);">
+                    <label class="form-label" style="font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; color: #B27B17;">
+                        <i data-lucide="shield-alert" style="width: 16px; height: 16px;"></i>
+                        <span>Precautionary Cross-Contact (MAY_CONTAIN relationship)</span>
+                    </label>
+                    <p class="form-text" style="margin-bottom: 0.6rem;">Select allergens that might cross-contact this dish via shared equipment, fryers, or prep lines.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.6rem; border: 1px solid rgba(229, 168, 50, 0.3); padding: 0.85rem; border-radius: 8px; background: var(--color-warning-light);">
+                        {% for a in all_allergens %}
+                            <label class="form-check">
+                                <input type="checkbox" name="may_contain_allergen_ids" value="{{ a.id }}" {% if a.id in selected_may_contain_ids %}checked{% endif %}>
+                                <span style="font-size: 0.85rem; font-weight: 500;">{{ a.name }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; border-top: 1px solid var(--color-border); padding-top: 1.25rem;">
+                    <a href="{% if is_edit %}/dishes/{{ dish.id }}{% else %}/dishes{% endif %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                        <span>{% if is_edit %}Save Dish Recipe{% else %}Create Dish{% endif %}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

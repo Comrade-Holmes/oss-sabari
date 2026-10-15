@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Allergens — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Allergens</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Tracked Food Allergens</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Major regulatory and culinary allergens linked to ingredients and dishes across the knowledge graph</p>
+    </div>
+    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+        <a href="/allergens/new" class="btn btn-primary">
+            <i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i>
+            <span>Add Allergen</span>
+        </a>
+    {% endif %}
+</div>
+
+<!-- Search & Category Filter -->
+<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+    <form action="/allergens" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 2; min-width: 220px;">
+            <label class="form-label">Search</label>
+            <input type="text" name="search" class="form-control" placeholder="Search allergen name or description..." value="{{ search or '' }}">
+        </div>
+
+        <div style="flex: 1; min-width: 160px;">
+            <label class="form-label">Allergen Category</label>
+            <select name="category" class="form-control">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                    <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-secondary">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                <span>Filter</span>
+            </button>
+            <a href="/allergens" class="btn btn-secondary" title="Reset Filters"><i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Allergens Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Allergen Name</th>
+                    <th>Category</th>
+                    <th>Associated Ingredients</th>
+                    <th>Connected Menu Dishes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if allergens %}
+                    {% for a in allergens %}
+                        <tr>
+                            <td>
+                                <a href="/allergens/{{ a.id }}" style="font-weight: 600; font-size: 0.95rem; color: var(--color-deep);">
+                                    {{ a.name }}
+                                </a>
+                                {% if a.description %}
+                                    <div style="font-size: 0.8rem; color: var(--color-text-muted); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        {{ a.description }}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge badge-red">{{ a.allergen_category }}</span></td>
+                            <td>
+                                <a href="/ingredients?allergen={{ a.id }}" class="badge badge-blue">
+                                    {{ a.ingredient_count }} Ingredients &rarr;
+                                </a>
+                            </td>
+                            <td>
+                                <a href="/dishes?allergen={{ a.id }}" class="badge badge-amber">
+                                    {{ a.dish_count }} Dishes &rarr;
+                                </a>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.4rem;">
+                                    <a href="/allergens/{{ a.id }}" class="btn btn-secondary btn-sm" title="View Associations">
+                                        <i data-lucide="eye" style="width: 14px; height: 14px;"></i>
+                                    </a>
+                                    {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+                                        <a href="/allergens/{{ a.id }}/edit" class="btn btn-secondary btn-sm" title="Edit Allergen">
+                                            <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if current_user.role == 'ADMIN' %}
+                                        <form action="/allergens/{{ a.id }}/delete" method="POST" style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="button" class="btn btn-secondary btn-sm" style="color: var(--color-danger);" data-confirm="Delete allergen '{{ a.name }}'? Deleting will detach it from {{ a.ingredient_count }} ingredients and {{ a.dish_count }} dishes." title="Delete Allergen">
+                                                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: 3rem;">
+                            <i data-lucide="alert-triangle" style="width: 36px; height: 36px; margin-bottom: 0.75rem; opacity: 0.4;"></i>
+                            <div>No allergens matched your query.</div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total allergens)
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&search={{ search or '' }}&category={{ selected_category or '' }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&search={{ search or '' }}&category={{ selected_category or '' }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

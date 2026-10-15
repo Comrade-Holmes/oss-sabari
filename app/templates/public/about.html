@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}About AllerGraph — Healthcare-Grade Food Intelligence{% endblock %}
+
+{% block public_content %}
+<div style="max-width: 960px; margin: 4rem auto; padding: 0 1.5rem;">
+    <div style="margin-bottom: 2.5rem;">
+        <span class="badge badge-green" style="margin-bottom: 0.5rem;">Our Mission</span>
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">Bridging the Gap Between Restaurant Menus and Food Allergy Safety</h1>
+        <p style="font-size: 1.1rem; color: var(--color-text-muted); line-height: 1.6;">
+            Food allergies affect over 250 million people worldwide. In complex culinary environments, allergens frequently hide behind generic ingredient labels, secret sauce blends, and shared cooking surfaces. AllerGraph was created to make food compositions transparent and verifiable.
+        </p>
+    </div>
+
+    <div class="card" style="margin-bottom: 2.5rem;">
+        <div class="card-body" style="padding: 2.25rem;">
+            <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">Why Neo4j Graph Database?</h2>
+            <p style="color: var(--color-text-main); margin-bottom: 1.25rem; line-height: 1.6;">
+                Legacy relational databases force nested hierarchical food data into flat tables with rigid join tables. This makes multi-hop allergen queries (e.g., <em>"Find all restaurants that prepare dishes containing ingredients derived from milk or wheat"</em>) slow, brittle, and error-prone.
+            </p>
+            <p style="color: var(--color-text-main); margin-bottom: 1.25rem; line-height: 1.6;">
+                With Neo4j, relationships are first-class citizens. By explicitly modeling:
+            </p>
+            <ul style="padding-left: 1.5rem; color: var(--color-text-main); margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <li><code>(Restaurant)-[:OFFERS]->(Dish)</code></li>
+                <li><code>(Dish)-[:CONTAINS]->(Ingredient)</code></li>
+                <li><code>(Ingredient)-[:CONTAINS_ALLERGEN]->(Allergen)</code></li>
+                <li><code>(Dish)-[:MAY_CONTAIN]->(Allergen)</code> (Precautionary cross-contact)</li>
+            </ul>
+            <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.6;">
+                AllerGraph can traverse complex supply chains in milliseconds, uncovering indirect linkages and alerting diners to potential hazards that traditional digital menus omit.
+            </p>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-bottom: 3rem;">
+        <div class="card" style="padding: 1.75rem;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem; color: var(--color-forest);">
+                <i data-lucide="check-check" style="vertical-align: middle; margin-right: 0.4rem;"></i>
+                Verification Rigor
+            </h3>
+            <p style="font-size: 0.9rem; color: var(--color-text-muted); line-height: 1.5;">
+                Every ingredient in AllerGraph maintains a strict verification state: Verified, In-Review, or Unverified with traceable source references (lab certificates, manufacturer allergen declarations, or agricultural specs).
+            </p>
+        </div>
+
+        <div class="card" style="padding: 1.75rem;">
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.75rem; color: var(--color-forest);">
+                <i data-lucide="shield-alert" style="vertical-align: middle; margin-right: 0.4rem;"></i>
+                Precautionary Cross-Contact
+            </h3>
+            <p style="font-size: 0.9rem; color: var(--color-text-muted); line-height: 1.5;">
+                We clearly separate direct culinary ingredients from precautionary cross-contact (<code>MAY_CONTAIN</code>) hazards caused by shared fryers, common hearth ovens, or shared prep tables.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

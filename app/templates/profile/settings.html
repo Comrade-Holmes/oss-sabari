@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}System Health & Settings — AllerGraph Admin{% endblock %}
+{% block breadcrumb %}<span class="current">Settings & Health</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.85rem;">System Configuration & Database Health</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+            Inspect Neo4j driver state, schema constraints, and verification pipeline configurations
+        </p>
+    </div>
+
+    <!-- Health Status Banner -->
+    <div class="card" style="margin-bottom: 2rem; border-left: 5px solid var(--color-forest);">
+        <div class="card-body" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--color-sage); color: var(--color-forest); display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="check-circle-2" style="width: 24px; height: 24px;"></i>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.15rem; color: var(--color-deep);">Neo4j Graph Database Operational</h3>
+                    <p style="font-size: 0.85rem; color: var(--color-text-muted);">Bolt connection verified on local instance (port 7687)</p>
+                </div>
+            </div>
+            <span class="badge badge-green" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">CONNECTED</span>
+        </div>
+    </div>
+
+    <!-- Environment & Configuration Details -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="server" style="width: 18px; height: 18px;"></i><span>Neo4j Connection Parameters</span></h3>
+        </div>
+        <div class="card-body" style="font-size: 0.9rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                <div>
+                    <strong style="color: var(--color-text-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Bolt URI</strong>
+                    <code>{{ db_uri }}</code>
+                </div>
+                <div>
+                    <strong style="color: var(--color-text-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Username</strong>
+                    <div>{{ db_user }}</div>
+                </div>
+                <div>
+                    <strong style="color: var(--color-text-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Database Name</strong>
+                    <div>{{ db_name }}</div>
+                </div>
+                <div>
+                    <strong style="color: var(--color-text-muted); display: block; font-size: 0.75rem; text-transform: uppercase;">Security Secret Status</strong>
+                    <div style="color: var(--color-forest); font-weight: 500;">✓ Encrypted Session & CSRF Secrets Active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schema Constraints -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="shield-check" style="width: 18px; height: 18px;"></i><span>Idempotent Schema Constraints & Indexes</span></h3>
+        </div>
+        <div class="card-body">
+            <p style="font-size: 0.875rem; color: var(--color-text-muted); margin-bottom: 1rem;">
+                Uniqueness constraints ensure no entity UUID collision or duplicate user email registrations:
+            </p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
+                <li style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="check" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                    <code>User.id IS UNIQUE & User.email IS UNIQUE</code>
+                </li>
+                <li style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="check" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                    <code>Restaurant.id IS UNIQUE</code>
+                </li>
+                <li style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="check" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                    <code>Dish.id IS UNIQUE</code>
+                </li>
+                <li style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="check" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                    <code>Ingredient.id IS UNIQUE</code>
+                </li>
+                <li style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="check" style="color: var(--color-forest); width: 16px; height: 16px;"></i>
+                    <code>Allergen.id IS UNIQUE & Allergen.name IS UNIQUE</code>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Data Verification Workflow -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="clipboard-check" style="width: 18px; height: 18px;"></i><span>Data Verification Pipeline Workflow</span></h3>
+        </div>
+        <div class="card-body" style="font-size: 0.9rem; line-height: 1.6; color: var(--color-text-main);">
+            <p style="margin-bottom: 0.85rem;">
+                AllerGraph enforces a three-stage verification lifecycle for food data integrity:
+            </p>
+            <ol style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.85rem;">
+                <li><strong>Ingestion:</strong> New ingredients enter as <code>UNVERIFIED</code> by default.</li>
+                <li><strong>Editorial Review:</strong> Editors link lab analysis or supplier spec sheets and update status to <code>IN_REVIEW</code>.</li>
+                <li><strong>Verification Approval:</strong> Timestamped <code>VERIFIED</code> flag awarded upon certificate audit.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}

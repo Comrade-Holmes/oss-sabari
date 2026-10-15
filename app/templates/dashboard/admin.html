@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Intelligence Center — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Admin Overview</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Platform Intelligence Overview</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Live Neo4j graph metrics, verification audit status, and recent mutations</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="/dishes/new" class="btn btn-primary"><i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i><span>New Dish</span></a>
+        <a href="/ingredients/new" class="btn btn-secondary"><i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i><span>New Ingredient</span></a>
+        <a href="/reports" class="btn btn-outline-forest"><i data-lucide="file-text" style="width: 16px; height: 16px;"></i><span>All Reports</span></a>
+    </div>
+</div>
+
+<!-- Live Neo4j Stats KPI Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon green"><i data-lucide="store"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_restaurants }}</div>
+            <div class="stat-label">Restaurants Active</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon blue"><i data-lucide="utensils"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_dishes }}</div>
+            <div class="stat-label">Dishes & Menus</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green"><i data-lucide="leaf"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_ingredients }}</div>
+            <div class="stat-label">Total Ingredients</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon red"><i data-lucide="alert-triangle"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_allergens }}</div>
+            <div class="stat-label">Tracked Allergens</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon amber"><i data-lucide="shield-alert"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.dishes_with_allergens }}</div>
+            <div class="stat-label">Dishes with Allergen Evidence</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon amber"><i data-lucide="help-circle"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.unverified_ingredients }}</div>
+            <div class="stat-label">Unverified Ingredients</div>
+        </div>
+    </div>
+</div>
+
+<!-- Dynamic Charts Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Chart 1: Top Allergen Distribution -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="bar-chart-2" style="width: 18px; height: 18px;"></i><span>Allergen Associations in Stored Data</span></h3>
+        </div>
+        <div class="card-body">
+            <canvas id="allergenChart" height="220"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Ingredient Verification Status Breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="pie-chart" style="width: 18px; height: 18px;"></i><span>Ingredient Verification Status</span></h3>
+        </div>
+        <div class="card-body">
+            <canvas id="verificationChart" height="220"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Administrative Activity & Attention Items -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <!-- Recent Activity Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="history" style="width: 18px; height: 18px;"></i><span>Recent Audit & Mutation Logs</span></h3>
+            <a href="/activity-logs" class="btn btn-secondary btn-sm">View All Logs</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Actor</th>
+                        <th>Action</th>
+                        <th>Target</th>
+                        <th>Details</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if recent_logs %}
+                        {% for log in recent_logs %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ log.actor_name }}</td>
+                                <td>
+                                    <span class="badge {% if 'CREATE' in log.action %}badge-green{% elif 'DELETE' in log.action %}badge-red{% else %}badge-blue{% endif %}">
+                                        {{ log.action }}
+                                    </span>
+                                </td>
+                                <td>{{ log.entity_type }}</td>
+                                <td style="color: var(--color-text-muted); font-size: 0.825rem;">{{ log.description }}</td>
+                                <td style="color: var(--color-text-muted); font-size: 0.8rem; white-space: nowrap;">{{ log.timestamp[:19].replace('T', ' ') }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--color-text-muted); padding: 2rem;">No recent audit logs recorded.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Data Quality Attention Box -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i data-lucide="alert-circle" style="width: 18px; height: 18px;"></i><span>Data Quality Attention</span></h3>
+        </div>
+        <div class="card-body" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="background-color: var(--color-warning-light); border-radius: 8px; padding: 1rem; border: 1px solid rgba(229, 168, 50, 0.25);">
+                <div style="font-weight: 600; color: #8A6110; font-size: 0.9rem; margin-bottom: 0.25rem;">Incomplete Dishes</div>
+                <div style="font-size: 0.85rem; color: var(--color-text-main);">
+                    <strong>{{ stats.incomplete_dishes }}</strong> dish records currently have partial or incomplete ingredient listings.
+                </div>
+                <a href="/reports" style="font-size: 0.8rem; font-weight: 600; color: var(--color-forest); display: inline-block; margin-top: 0.5rem;">Review in Reports &rarr;</a>
+            </div>
+
+            <div style="background-color: var(--color-sage-light); border-radius: 8px; padding: 1rem; border: 1px solid var(--color-border);">
+                <div style="font-weight: 600; color: var(--color-forest); font-size: 0.9rem; margin-bottom: 0.25rem;">Unverified Ingredients</div>
+                <div style="font-size: 0.85rem; color: var(--color-text-main);">
+                    <strong>{{ stats.unverified_ingredients }}</strong> ingredients await source reference certificates.
+                </div>
+                <a href="/ingredients?verification=UNVERIFIED" style="font-size: 0.8rem; font-weight: 600; color: var(--color-forest); display: inline-block; margin-top: 0.5rem;">Filter Ingredients &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Allergen Associations Chart
+    const allergenData = {{ allergen_dist | tojson }};
+    const ctxAllergen = document.getElementById('allergenChart').getContext('2d');
+    new Chart(ctxAllergen, {
+        type: 'bar',
+        data: {
+            labels: allergenData.map(d => d.allergen_name),
+            datasets: [
+                {
+                    label: 'Associated Dishes',
+                    data: allergenData.map(d => d.dish_count),
+                    backgroundColor: '#E5A832',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Linked Ingredients',
+                    data: allergenData.map(d => d.ingredient_count),
+                    backgroundColor: '#245C46',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+
+    // 2. Ingredient Verification Breakdown
+    const vData = {{ verification_breakdown | tojson }};
+    const ctxV = document.getElementById('verificationChart').getContext('2d');
+    new Chart(ctxV, {
+        type: 'doughnut',
+        data: {
+            labels: ['Verified', 'In Review', 'Unverified'],
+            datasets: [{
+                data: [vData.VERIFIED || 0, vData.IN_REVIEW || 0, vData.UNVERIFIED || 0],
+                backgroundColor: ['#245C46', '#E5A832', '#C74747']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

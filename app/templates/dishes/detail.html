@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}{{ dish.name }} — Dish Intelligence{% endblock %}
+{% block breadcrumb %}
+    <a href="/dishes">Dishes</a>
+    <span>/</span>
+    <span class="current">{{ dish.name }}</span>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
+            <h1 style="font-size: 2.1rem;">{{ dish.name }}</h1>
+            <span class="badge badge-gray">{{ dish.category }}</span>
+            {% if dish.vegan %}<span class="badge badge-green">Vegan</span>{% elif dish.vegetarian %}<span class="badge badge-green">Vegetarian</span>{% endif %}
+        </div>
+        <p style="color: var(--color-text-muted); font-size: 0.95rem;">
+            Offered at: 
+            {% for r in dish.restaurants %}
+                <a href="/restaurants/{{ r.id }}" style="font-weight: 600;">{{ r.name }} ({{ r.city }})</a>{% if not loop.last %}, {% endif %}
+            {% else %}
+                <span>Not linked to a restaurant menu</span>
+            {% endfor %}
+        </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+        {% if current_user.role in ['ADMIN', 'EDITOR'] %}
+            <a href="/dishes/{{ dish.id }}/edit" class="btn btn-secondary">
+                <i data-lucide="edit" style="width: 16px; height: 16px;"></i>
+                <span>Edit Dish Recipe</span>
+            </a>
+        {% endif %}
+        <a href="/graph?search={{ dish.name }}" class="btn btn-outline-forest">
+            <i data-lucide="network" style="width: 16px; height: 16px;"></i>
+            <span>Inspect in Graph</span>
+        </a>
+    </div>
+</div>
+
+<!-- Allergen Alert Highlights -->
+{% if dish.allergens or dish.may_contain_allergens %}
+    <div style="background-color: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.3); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--color-danger); font-weight: 700; margin-bottom: 0.75rem; font-size: 1.05rem;">
+            <i data-lucide="shield-alert"></i>
+            <span>Allergen Evidence Recorded for this Recipe</span>
+        </div>
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            {% if dish.allergens %}
+                <div>
+                    <span style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: #8A2424; display: block; margin-bottom: 0.4rem;">Direct Ingredients:</span>
+                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                        {% for a in dish.allergens %}
+                            <a href="/allergens/{{ a.id }}" class="badge badge-red" style="font-size: 0.8rem;">{{ a.name }} &rarr;</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if dish.may_contain_allergens %}
+                <div>
+                    <span style="font-size: 0.8rem; text-transform: uppercase; font-weight: 600; color: #975A16; display: block; margin-bottom: 0.4rem;">Precautionary Cross-Contact:</span>
+                    <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                        {% for ma in dish.may_contain_allergens %}
+                            <a href="/allergens/{{ ma.id }}" class="badge badge-amber" style="font-size: 0.8rem;">May Contain: {{ ma.name }} &rarr;</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <div>
+        <!-- Recipe Description & Preparation -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="book-open" style="width: 18px; height: 18px;"></i><span>Culinary Description & Kitchen Preparation</span></h3>
+            </div>
+            <div class="card-body">
+                <p style="color: var(--color-text-main); font-size: 1rem; line-height: 1.6; margin-bottom: 1.25rem;">
+                    {{ dish.description or 'No culinary description recorded.' }}
+                </p>
+                {% if dish.preparation_notes %}
+                    <div style="background-color: var(--color-cream); border-left: 3px solid var(--color-forest); padding: 0.85rem 1rem; border-radius: 0 8px 8px 0;">
+                        <strong style="color: var(--color-deep); font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">Kitchen Preparation Notes:</strong>
+                        <p style="font-size: 0.875rem; color: var(--color-text-muted); line-height: 1.5;">{{ dish.preparation_notes }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Attached Ingredients Breakdown -->
+        <div class="card">
+            <div class="card-header" style="justify-content: space-between;">
+                <h3 class="card-title">
+                    <i data-lucide="leaf" style="width: 18px; height: 18px;"></i>
+                    <span>Ingredient Breakdown ({{ dish.ingredients | length }})</span>
+                </h3>
+                <span class="badge {% if dish.ingredient_data_status == 'COMPLETE' and dish.ingredients | length > 0 %}badge-green{% elif dish.ingredient_data_status == 'PARTIAL' %}badge-amber{% else %}badge-red{% endif %}">
+                    Data: {{ dish.ingredient_data_status }}
+                </span>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ingredient</th>
+                            <th>Category</th>
+                            <th>Verification</th>
+                            <th>Source Spec</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if dish.ingredients %}
+                            {% for ing in dish.ingredients %}
+                                <tr>
+                                    <td>
+                                        <a href="/ingredients/{{ ing.id }}" style="font-weight: 600; color: var(--color-deep);">
+                                            {{ ing.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ ing.category }}</td>
+                                    <td>
+                                        <span class="badge {% if ing.verification_status == 'VERIFIED' %}badge-green{% elif ing.verification_status == 'IN_REVIEW' %}badge-amber{% else %}badge-red{% endif %}" style="font-size: 0.7rem;">
+                                            {{ ing.verification_status }}
+                                        </span>
+                                    </td>
+                                    <td style="color: var(--color-text-muted); font-size: 0.8rem;">
+                                        {{ ing.source_reference or 'Pending supplier spec' }}
+                                    </td>
+                                    <td>
+                                        <a href="/ingredients/{{ ing.id }}" class="btn btn-secondary btn-sm">Inspect</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--color-danger); padding: 2.5rem;">
+                                    <i data-lucide="alert-circle" style="width: 32px; height: 32px; margin-bottom: 0.5rem;"></i>
+                                    <div>No ingredients attached to this dish record! Treat as requiring kitchen confirmation.</div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Dish Sidebar Info -->
+    <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="tag" style="width: 18px; height: 18px;"></i><span>Dish Pricing & Availability</span></h3>
+            </div>
+            <div class="card-body" style="font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--color-text-muted);">Menu Price:</span>
+                    <strong style="font-size: 1.35rem; color: var(--color-deep);">${{ "%.2f"|format(dish.price) }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--color-text-muted);">Availability:</span>
+                    <span class="badge {% if dish.availability_status == 'AVAILABLE' %}badge-green{% else %}badge-amber{% endif %}">
+                        {{ dish.availability_status }}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--color-text-muted);">Dietary:</span>
+                    <span>
+                        {% if dish.vegan %}Vegan{% elif dish.vegetarian %}Vegetarian{% else %}Standard{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="shield-check" style="width: 18px; height: 18px;"></i><span>Screen This Dish</span></h3>
+            </div>
+            <div class="card-body">
+                <a href="/allergy-checker?category={{ dish.category }}" class="btn btn-primary" style="width: 100%;">
+                    <i data-lucide="search-check" style="width: 16px; height: 16px;"></i>
+                    <span>Check Against Allergens</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

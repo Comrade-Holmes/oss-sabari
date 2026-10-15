@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Create an Account — AllerGraph{% endblock %}
+
+{% block public_content %}
+<div style="min-height: calc(100vh - 72px - 250px); display: flex; align-items: center; justify-content: center; padding: 3rem 1.5rem;">
+    <div class="card" style="width: 100%; max-width: 480px; box-shadow: var(--shadow-lg);">
+        <div class="card-header" style="text-align: center; display: block; padding: 2rem 1.5rem 1.25rem;">
+            <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 42px; height: 42px;">
+                <i data-lucide="user-plus" style="width: 24px; height: 24px;"></i>
+            </div>
+            <h2 style="font-size: 1.5rem; color: var(--color-deep);">Create AllerGraph Account</h2>
+            <p style="color: var(--color-text-muted); font-size: 0.875rem; margin-top: 0.25rem;">Explore restaurant allergen intelligence and graph linkages</p>
+        </div>
+
+        <div class="card-body" style="padding: 1.75rem 2rem 2rem;">
+            {% if error %}
+                <div style="background-color: var(--color-danger-light); border: 1px solid rgba(199, 71, 71, 0.3); color: var(--color-danger); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i data-lucide="alert-circle" style="width: 18px; height: 18px; flex-shrink: 0;"></i>
+                    <span>{{ error }}</span>
+                </div>
+            {% endif %}
+
+            <form action="/register" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-control" placeholder="Alex Morgan" value="{{ full_name or '' }}" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="alex@example.com" value="{{ email or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="Min. 8 chars, 1 uppercase, 1 lowercase, 1 digit" required>
+                    <div class="form-text">Must be at least 8 characters with upper, lower, and numeric characters.</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" name="confirm_password" class="form-control" placeholder="Re-type password" required>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.25rem;">
+                    <label class="form-check">
+                        <input type="checkbox" name="terms_accepted" value="true" required>
+                        <span style="font-size: 0.825rem; color: var(--color-text-main);">
+                            I accept the <a href="/privacy" target="_blank" style="font-weight: 600;">Terms of Service & Food Safety Disclaimer</a>
+                        </span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; margin-top: 0.75rem;">
+                    <i data-lucide="shield-check" style="width: 18px; height: 18px;"></i>
+                    <span>Register Account</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="card-footer" style="text-align: center; font-size: 0.875rem; color: var(--color-text-muted);">
+            Already have an account? <a href="/login" style="font-weight: 600;">Sign in here</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

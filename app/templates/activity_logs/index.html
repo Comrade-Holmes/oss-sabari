@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs — AllerGraph Admin{% endblock %}
+{% block breadcrumb %}<span class="current">Activity Logs</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">System Audit & Mutation History</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">
+            Immutable audit record of administrative actions, entity creation, edits, and deletions
+        </p>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card" style="margin-bottom: 1.75rem; padding: 1.25rem;">
+    <form action="/activity-logs" method="GET" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 180px;">
+            <label class="form-label">Entity Type</label>
+            <select name="entity_type" class="form-control">
+                <option value="">All Entities</option>
+                <option value="Restaurant" {% if selected_entity == 'Restaurant' %}selected{% endif %}>Restaurant</option>
+                <option value="Dish" {% if selected_entity == 'Dish' %}selected{% endif %}>Dish</option>
+                <option value="Ingredient" {% if selected_entity == 'Ingredient' %}selected{% endif %}>Ingredient</option>
+                <option value="Allergen" {% if selected_entity == 'Allergen' %}selected{% endif %}>Allergen</option>
+                <option value="User" {% if selected_entity == 'User' %}selected{% endif %}>User</option>
+            </select>
+        </div>
+
+        <div style="flex: 1; min-width: 180px;">
+            <label class="form-label">Action</label>
+            <select name="action" class="form-control">
+                <option value="">All Actions</option>
+                <option value="CREATE" {% if selected_action == 'CREATE' %}selected{% endif %}>CREATE</option>
+                <option value="UPDATE" {% if selected_action == 'UPDATE' %}selected{% endif %}>UPDATE</option>
+                <option value="DELETE" {% if selected_action == 'DELETE' %}selected{% endif %}>DELETE</option>
+                <option value="ROLE_CHANGE" {% if selected_action == 'ROLE_CHANGE' %}selected{% endif %}>ROLE_CHANGE</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-secondary">
+                <i data-lucide="filter" style="width: 16px; height: 16px;"></i>
+                <span>Filter</span>
+            </button>
+            <a href="/activity-logs" class="btn btn-secondary" title="Reset Filters"><i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Logs Table -->
+<div class="card">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Actor</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>Target ID</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if logs %}
+                    {% for l in logs %}
+                        <tr>
+                            <td style="color: var(--color-text-muted); font-size: 0.8rem; white-space: nowrap;">
+                                {{ l.timestamp[:19].replace('T', ' ') }}
+                            </td>
+                            <td style="font-weight: 600;">{{ l.actor_name }}</td>
+                            <td>
+                                <span class="badge {% if 'CREATE' in l.action %}badge-green{% elif 'DELETE' in l.action %}badge-red{% else %}badge-blue{% endif %}">
+                                    {{ l.action }}
+                                </span>
+                            </td>
+                            <td>{{ l.entity_type }}</td>
+                            <td><code style="font-size: 0.75rem;">{{ l.entity_id[:13] }}...</code></td>
+                            <td style="color: var(--color-text-main); font-size: 0.85rem;">{{ l.description }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 3rem;">No audit logs matched your query.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total_pages > 1 %}
+        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 0.85rem; color: var(--color-text-muted);">
+                Showing page {{ current_page }} of {{ total_pages }} ({{ total_count }} total entries)
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                {% if current_page > 1 %}
+                    <a href="?page={{ current_page - 1 }}&entity_type={{ selected_entity or '' }}&action={{ selected_action or '' }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                {% endif %}
+                {% if current_page < total_pages %}
+                    <a href="?page={{ current_page + 1 }}&entity_type={{ selected_entity or '' }}&action={{ selected_action or '' }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

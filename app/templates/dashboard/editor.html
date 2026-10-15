@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Editor Operations Workspace — AllerGraph{% endblock %}
+{% block breadcrumb %}<span class="current">Editor Overview</span>{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 style="font-size: 1.85rem;">Curator & Editor Workspace</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.9rem;">Review data quality, verify supplier specifications, and update menu graph nodes</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="/dishes/new" class="btn btn-primary"><i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i><span>Add Dish</span></a>
+        <a href="/ingredients/new" class="btn btn-secondary"><i data-lucide="plus-circle" style="width: 16px; height: 16px;"></i><span>Add Ingredient</span></a>
+        <a href="/allergy-checker" class="btn btn-outline-forest"><i data-lucide="search-check" style="width: 16px; height: 16px;"></i><span>Run Allergy Checker</span></a>
+    </div>
+</div>
+
+<!-- Editor KPI Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon amber"><i data-lucide="clipboard-list"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ incomplete_dishes | length }}</div>
+            <div class="stat-label">Dishes Requiring Updates</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon red"><i data-lucide="shield-alert"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ unverified_ingredients | length }}</div>
+            <div class="stat-label">Ingredients Awaiting Verification</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green"><i data-lucide="check-circle-2"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_ingredients - (unverified_ingredients | length) }}</div>
+            <div class="stat-label">Verified Ingredients</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon blue"><i data-lucide="utensils"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_dishes }}</div>
+            <div class="stat-label">Total Menu Dishes</div>
+        </div>
+    </div>
+</div>
+
+<!-- Incomplete Dishes Table -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h3 class="card-title"><i data-lucide="alert-triangle" style="width: 18px; height: 18px; color: var(--color-warning);"></i><span>Dishes Requiring Ingredient Data Completion</span></h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Dish Name</th>
+                    <th>Category</th>
+                    <th>Restaurant</th>
+                    <th>Current Status</th>
+                    <th>Recorded Ingredients</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if incomplete_dishes %}
+                    {% for d in incomplete_dishes %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ d.name }}</td>
+                            <td>{{ d.category }}</td>
+                            <td>{{ d.restaurant_name or 'Unlinked' }}</td>
+                            <td><span class="badge badge-amber">{{ d.data_status }}</span></td>
+                            <td>{{ d.ingredient_count }} ingredients</td>
+                            <td>
+                                <a href="/dishes/{{ d.id }}/edit" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="edit" style="width: 14px; height: 14px;"></i>
+                                    <span>Complete Recipe</span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 1.5rem;">All dishes have complete ingredient listings!</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Ingredients Awaiting Verification Table -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i data-lucide="file-check" style="width: 18px; height: 18px; color: var(--color-info);"></i><span>Ingredients Awaiting Verification & Source Specifications</span></h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ingredient</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Current Source Reference</th>
+                    <th>Affected Dishes</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if unverified_ingredients %}
+                    {% for ing in unverified_ingredients %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ ing.name }}</td>
+                            <td>{{ ing.category }}</td>
+                            <td><span class="badge badge-red">{{ ing.status }}</span></td>
+                            <td style="color: var(--color-text-muted); font-size: 0.85rem;">{{ ing.source }}</td>
+                            <td>{{ ing.affected_dishes }} dishes</td>
+                            <td>
+                                <a href="/ingredients/{{ ing.id }}/edit" class="btn btn-secondary btn-sm">
+                                    <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                                    <span>Verify Spec</span>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 1.5rem;">All ingredients are verified!</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
